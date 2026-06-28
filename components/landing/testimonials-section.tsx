@@ -38,6 +38,7 @@ export function TestimonialsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [direction, setDirection] = useState<"left" | "right">("right");
+  const [asciiPattern, setAsciiPattern] = useState("");
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -50,6 +51,16 @@ export function TestimonialsSection() {
 
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    // Generate ASCII pattern on client side only to avoid hydration mismatch
+    const pattern = Array.from({ length: 60 }, (_, i) => 
+      Array.from({ length: 100 }, () => 
+        Math.random() > 0.7 ? '"' : ' '
+      ).join("")
+    ).join("\n");
+    setAsciiPattern(pattern);
   }, []);
 
   useEffect(() => {
@@ -81,11 +92,7 @@ export function TestimonialsSection() {
     <section ref={sectionRef} className="relative py-32 lg:py-40 bg-foreground text-background overflow-hidden">
       {/* ASCII background pattern */}
       <div className="absolute inset-0 font-mono text-[10px] text-background/[0.02] leading-tight overflow-hidden whitespace-pre select-none">
-        {Array.from({ length: 60 }, (_, i) => 
-          Array.from({ length: 100 }, () => 
-            Math.random() > 0.7 ? '"' : ' '
-          ).join("")
-        ).join("\n")}
+        {asciiPattern}
       </div>
 
       <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12">

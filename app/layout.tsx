@@ -25,6 +25,9 @@ export const metadata: Metadata = {
   title: 'KINEET — Communiquez avec des milliers de personnes depuis une seule plateforme',
   description: 'Kineet est la plateforme professionnelle pour envoyer des campagnes WhatsApp, Email et SMS depuis un seul endroit. Créez, prévisualisez et distribuez à des milliers de destinataires.',
   generator: 'v0.app',
+  icons: {
+    icon: '/icone.png',
+  },
 }
 
 export default function RootLayout({
