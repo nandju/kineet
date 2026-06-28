@@ -21,7 +21,7 @@ export default function LoginPage() {
           </p>
         </div>
         <img
-          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/tree-1-8UQGr1K8xK8xK8xK8xK8xK8xK8xK8xK.png"
+          src="/images/shield.png"
           alt="Illustration Kineet"
           className="absolute bottom-0 right-0 w-[65%] opacity-30 object-contain pointer-events-none"
         />
