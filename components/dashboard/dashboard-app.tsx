@@ -18,7 +18,7 @@ import { HomePanel } from "./home-panel";
 import { NewCampaignPanel } from "./new-campaign-panel";
 import { HistoryPanel } from "./history-panel";
 import { ProfilePanel } from "./profile-panel";
-import { SettingsPanel } from "./settings-panel";
+import { SettingsPanelV2 } from "./settings-panel-v2";
 
 const NAV: { id: DashboardSection; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Accueil", icon: Home },
@@ -80,7 +80,7 @@ function DashboardContent() {
     campaign: <NewCampaignPanel />,
     history: <HistoryPanel />,
     profile: <ProfilePanel />,
-    settings: <SettingsPanel />,
+    settings: <SettingsPanelV2 />,
   };
 
   return (

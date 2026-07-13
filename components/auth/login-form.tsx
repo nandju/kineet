@@ -20,6 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { notify } from "@/lib/kineet/notify";
+import { createClient } from "@/lib/supabase/client";
 
 const loginSchema = z.object({
   email: z
@@ -51,9 +52,21 @@ export function LoginForm() {
 
   const onSubmit = async (values: LoginFormValues) => {
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: values.email,
+      password: values.password,
+    });
+    setIsSubmitting(false);
+
+    if (error) {
+      notify.error("Connexion échouée", "E-mail ou mot de passe incorrect.");
+      return;
+    }
+
     notify.success("Connexion réussie", "Bienvenue sur Kineet.");
     router.push("/dashboard");
+    router.refresh();
   };
 
   return (

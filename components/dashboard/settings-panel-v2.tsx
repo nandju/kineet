@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -14,26 +14,29 @@ import { useDashboard } from "@/lib/kineet/dashboard-context";
 import { notify } from "@/lib/kineet/notify";
 import type { Settings } from "@/lib/kineet/types";
 import { useProviders, useNotifications } from "@/lib/hooks";
-import type { EmailConfig, WhatsAppConfig, SmsConfig } from "@/lib/types";
+import type { EmailConfig, WhatsAppConfig, SmsConfig, ProviderType, ProviderTestResult } from "@/lib/types";
+import { createClient } from "@/lib/supabase/client";
+import { getProviderConfig, upsertProviderConfig } from "@/lib/supabase/repositories/provider-configs";
+
+async function testProvider(type: ProviderType): Promise<ProviderTestResult> {
+  const res = await fetch("/api/providers/test", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type }),
+  });
+  return res.json();
+}
 
 export function SettingsPanelV2() {
   const { settings, updateSettings } = useDashboard();
-  const { 
-    configureEmail, 
-    configureWhatsApp, 
-    configureSms,
-    testEmailConnection,
-    testWhatsAppConnection,
-    testSmsConnection,
-    isEmailConfigured,
-    isWhatsAppConfigured,
-    isSmsConfigured,
-    isTesting,
-    emailConfig,
-    whatsappConfig,
-    smsConfig
-  } = useProviders();
+  const { configureWhatsApp, testWhatsAppConnection, isWhatsAppConfigured } = useProviders();
   const { configSaved, connectionSuccess, connectionFailed } = useNotifications();
+
+  const [supabase] = useState(() => createClient());
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
+  const [emailConnected, setEmailConnected] = useState(false);
+  const [smsConnected, setSmsConnected] = useState(false);
 
   // Email configuration state
   const [emailForm, setEmailForm] = useState<EmailConfig>({
@@ -59,15 +62,47 @@ export function SettingsPanelV2() {
     businessId: '',
   });
 
-  // SMS configuration state
+  // SMS configuration state (TextBee: apiKey + androidDeviceId)
   const [smsForm, setSmsForm] = useState<SmsConfig>({
     type: 'sms',
     status: 'not_configured',
     apiKey: '',
     senderId: '',
-    gatewayType: 'api',
+    gatewayType: 'android',
     androidDeviceId: '',
   });
+
+  // Load the signed-in user's stored provider configs from Supabase
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !active) return;
+      setUserId(user.id);
+
+      const [email, whatsapp, sms] = await Promise.all([
+        getProviderConfig(supabase, user.id, 'email'),
+        getProviderConfig(supabase, user.id, 'whatsapp'),
+        getProviderConfig(supabase, user.id, 'sms'),
+      ]);
+      if (!active) return;
+
+      if (email) {
+        setEmailForm(email as EmailConfig);
+        setEmailConnected(email.status === 'connected');
+      }
+      if (whatsapp) {
+        setWhatsappForm(whatsapp as WhatsAppConfig);
+        configureWhatsApp(whatsapp as WhatsAppConfig);
+      }
+      if (sms) {
+        setSmsForm(sms as SmsConfig);
+        setSmsConnected(sms.status === 'connected');
+      }
+    })();
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase]);
 
   const patch = (partial: Partial<Settings>) => {
     const next = { ...settings, ...partial };
@@ -76,38 +111,54 @@ export function SettingsPanelV2() {
   };
 
   const saveEmailConfig = async () => {
-    configureEmail(emailForm);
-    configSaved('Email');
-    
-    const result = await testEmailConnection();
-    if (result.success) {
-      connectionSuccess('Email SMTP');
-    } else {
-      connectionFailed('Email SMTP', result.message);
+    if (!userId) return;
+    setIsTesting(true);
+    try {
+      await upsertProviderConfig(supabase, userId, emailForm);
+      configSaved('Email');
+
+      const result = await testProvider('email');
+      setEmailConnected(result.success);
+      if (result.success) connectionSuccess('Email SMTP');
+      else connectionFailed('Email SMTP', result.message);
+    } catch {
+      notify.error("Erreur", "La configuration e-mail n'a pas pu être enregistrée.");
+    } finally {
+      setIsTesting(false);
     }
   };
 
   const saveWhatsAppConfig = async () => {
     configureWhatsApp(whatsappForm);
-    configSaved('WhatsApp');
-    
-    const result = await testWhatsAppConnection();
-    if (result.success) {
-      connectionSuccess('WhatsApp API');
-    } else {
-      connectionFailed('WhatsApp API', result.message);
+    if (userId) {
+      upsertProviderConfig(supabase, userId, whatsappForm).catch(() => {
+        notify.error("Erreur", "La configuration WhatsApp n'a pas pu être enregistrée.");
+      });
     }
+    configSaved('WhatsApp');
+
+    setIsTesting(true);
+    const result = await testWhatsAppConnection();
+    setIsTesting(false);
+    if (result.success) connectionSuccess('WhatsApp API');
+    else connectionFailed('WhatsApp API', result.message);
   };
 
   const saveSmsConfig = async () => {
-    configureSms(smsForm);
-    configSaved('SMS');
-    
-    const result = await testSmsConnection();
-    if (result.success) {
-      connectionSuccess('SMS Gateway');
-    } else {
-      connectionFailed('SMS Gateway', result.message);
+    if (!userId) return;
+    setIsTesting(true);
+    try {
+      await upsertProviderConfig(supabase, userId, smsForm);
+      configSaved('SMS');
+
+      const result = await testProvider('sms');
+      setSmsConnected(result.success);
+      if (result.success) connectionSuccess('SMS (TextBee)');
+      else connectionFailed('SMS (TextBee)', result.message);
+    } catch {
+      notify.error("Erreur", "La configuration SMS n'a pas pu être enregistrée.");
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -136,20 +187,20 @@ export function SettingsPanelV2() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Mail className="w-5 h-5" />
-                  <h2 className="font-display text-xl">Configuration Email</h2>
+                  <h2 className="font-display text-xl">Configuration Email (SMTP)</h2>
                 </div>
-                {isEmailConfigured() && (
+                {emailConnected && (
                   <div className="flex items-center gap-2 text-green-400">
                     <Check className="w-4 h-4" />
-                    <span className="text-sm">Configuré</span>
+                    <span className="text-sm">Connecté</span>
                   </div>
                 )}
               </div>
-              
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nom de l'expéditeur</Label>
-                  <Input 
+                  <Input
                     value={emailForm.expediteur}
                     onChange={(e) => setEmailForm({ ...emailForm, expediteur: e.target.value })}
                     className="h-11 bg-input"
@@ -158,7 +209,7 @@ export function SettingsPanelV2() {
                 </div>
                 <div className="space-y-2">
                   <Label>Adresse email</Label>
-                  <Input 
+                  <Input
                     type="email"
                     value={emailForm.adresseEmail}
                     onChange={(e) => setEmailForm({ ...emailForm, adresseEmail: e.target.value })}
@@ -168,7 +219,7 @@ export function SettingsPanelV2() {
                 </div>
                 <div className="space-y-2">
                   <Label>Serveur SMTP</Label>
-                  <Input 
+                  <Input
                     value={emailForm.serveurSmtp}
                     onChange={(e) => setEmailForm({ ...emailForm, serveurSmtp: e.target.value })}
                     className="h-11 bg-input"
@@ -177,7 +228,7 @@ export function SettingsPanelV2() {
                 </div>
                 <div className="space-y-2">
                   <Label>Port</Label>
-                  <Input 
+                  <Input
                     type="number"
                     value={emailForm.port}
                     onChange={(e) => setEmailForm({ ...emailForm, port: parseInt(e.target.value) })}
@@ -187,7 +238,7 @@ export function SettingsPanelV2() {
                 </div>
                 <div className="space-y-2">
                   <Label>Nom d'utilisateur</Label>
-                  <Input 
+                  <Input
                     value={emailForm.utilisateur}
                     onChange={(e) => setEmailForm({ ...emailForm, utilisateur: e.target.value })}
                     className="h-11 bg-input"
@@ -196,7 +247,7 @@ export function SettingsPanelV2() {
                 </div>
                 <div className="space-y-2">
                   <Label>Mot de passe</Label>
-                  <Input 
+                  <Input
                     type="password"
                     value={emailForm.motDePasse}
                     onChange={(e) => setEmailForm({ ...emailForm, motDePasse: e.target.value })}
@@ -206,7 +257,7 @@ export function SettingsPanelV2() {
                 </div>
                 <div className="space-y-2">
                   <Label>Adresse de réponse (optionnel)</Label>
-                  <Input 
+                  <Input
                     type="email"
                     value={emailForm.adresseReponse}
                     onChange={(e) => setEmailForm({ ...emailForm, adresseReponse: e.target.value })}
@@ -216,7 +267,7 @@ export function SettingsPanelV2() {
                 </div>
                 <div className="space-y-2">
                   <Label>Sécurité</Label>
-                  <select 
+                  <select
                     value={emailForm.securite}
                     onChange={(e) => setEmailForm({ ...emailForm, securite: e.target.value as 'none' | 'tls' | 'ssl' })}
                     className="h-11 w-full bg-input border border-border rounded-md px-3"
@@ -227,10 +278,10 @@ export function SettingsPanelV2() {
                   </select>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Signature (optionnel)</Label>
-                <Textarea 
+                <Textarea
                   value={emailForm.signature}
                   onChange={(e) => setEmailForm({ ...emailForm, signature: e.target.value })}
                   rows={3}
@@ -240,7 +291,7 @@ export function SettingsPanelV2() {
               </div>
 
               <div className="flex gap-4">
-                <Button 
+                <Button
                   className="rounded-full bg-foreground text-background"
                   onClick={saveEmailConfig}
                   disabled={isTesting}
@@ -252,7 +303,7 @@ export function SettingsPanelV2() {
               <Alert>
                 <AlertTriangle className="w-4 h-4" />
                 <AlertDescription>
-                  Pour Gmail, utilisez un mot de passe d'application. Pour Outlook, activez l'authentification SMTP.
+                  Pour Gmail, utilisez un mot de passe d'application (compte Google → Sécurité → Mots de passe des applications). Pour tout autre service SMTP, indiquez les identifiants fournis par votre hébergeur.
                 </AlertDescription>
               </Alert>
             </div>
@@ -275,7 +326,7 @@ export function SettingsPanelV2() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Clé API</Label>
-                  <Input 
+                  <Input
                     type="password"
                     value={whatsappForm.apiKey}
                     onChange={(e) => setWhatsappForm({ ...whatsappForm, apiKey: e.target.value })}
@@ -285,7 +336,7 @@ export function SettingsPanelV2() {
                 </div>
                 <div className="space-y-2">
                   <Label>Numéro de téléphone</Label>
-                  <Input 
+                  <Input
                     value={whatsappForm.phoneNumber}
                     onChange={(e) => setWhatsappForm({ ...whatsappForm, phoneNumber: e.target.value })}
                     className="h-11 bg-input"
@@ -294,7 +345,7 @@ export function SettingsPanelV2() {
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label>ID Business (optionnel)</Label>
-                  <Input 
+                  <Input
                     value={whatsappForm.businessId}
                     onChange={(e) => setWhatsappForm({ ...whatsappForm, businessId: e.target.value })}
                     className="h-11 bg-input"
@@ -304,7 +355,7 @@ export function SettingsPanelV2() {
               </div>
 
               <div className="flex gap-4">
-                <Button 
+                <Button
                   className="rounded-full bg-foreground text-background"
                   onClick={saveWhatsAppConfig}
                   disabled={isTesting}
@@ -316,7 +367,7 @@ export function SettingsPanelV2() {
               <Alert>
                 <AlertTriangle className="w-4 h-4" />
                 <AlertDescription>
-                  Utilisez un fournisseur compatible WhatsApp Business API (Twilio, MessageBird, etc.).
+                  WhatsApp n'a pas encore de fournisseur réel branché — cette section reste simulée en attendant votre choix (Twilio, MessageBird, etc.).
                 </AlertDescription>
               </Alert>
             </div>
@@ -326,9 +377,9 @@ export function SettingsPanelV2() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Phone className="w-5 h-5" />
-                  <h2 className="font-display text-xl">Configuration SMS</h2>
+                  <h2 className="font-display text-xl">Configuration SMS (TextBee)</h2>
                 </div>
-                {isSmsConfigured() && (
+                {smsConnected && (
                   <div className="flex items-center gap-2 text-green-400">
                     <Check className="w-4 h-4" />
                     <span className="text-sm">Configuré</span>
@@ -338,50 +389,37 @@ export function SettingsPanelV2() {
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Clé API</Label>
-                  <Input 
+                  <Label>Clé API TextBee</Label>
+                  <Input
                     type="password"
                     value={smsForm.apiKey}
                     onChange={(e) => setSmsForm({ ...smsForm, apiKey: e.target.value })}
                     className="h-11 bg-input"
-                    placeholder="sms_xxxxxxxxxxxx"
+                    placeholder="Depuis app.textbee.dev/dashboard"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Identifiant d'appareil</Label>
+                  <Input
+                    value={smsForm.androidDeviceId}
+                    onChange={(e) => setSmsForm({ ...smsForm, androidDeviceId: e.target.value })}
+                    className="h-11 bg-input"
+                    placeholder="device_xxxxxxxxxxxx"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Sender ID (optionnel)</Label>
-                  <Input 
+                  <Input
                     value={smsForm.senderId}
                     onChange={(e) => setSmsForm({ ...smsForm, senderId: e.target.value })}
                     className="h-11 bg-input"
                     placeholder="KINEET"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Type de passerelle</Label>
-                  <select 
-                    value={smsForm.gatewayType}
-                    onChange={(e) => setSmsForm({ ...smsForm, gatewayType: e.target.value as 'api' | 'android' })}
-                    className="h-11 w-full bg-input border border-border rounded-md px-3"
-                  >
-                    <option value="api">API SMS</option>
-                    <option value="android">Appareil Android</option>
-                  </select>
-                </div>
-                {smsForm.gatewayType === 'android' && (
-                  <div className="space-y-2">
-                    <Label>ID Appareil Android (optionnel)</Label>
-                    <Input 
-                      value={smsForm.androidDeviceId}
-                      onChange={(e) => setSmsForm({ ...smsForm, androidDeviceId: e.target.value })}
-                      className="h-11 bg-input"
-                      placeholder="device_xxxxxxxxxxxx"
-                    />
-                  </div>
-                )}
               </div>
 
               <div className="flex gap-4">
-                <Button 
+                <Button
                   className="rounded-full bg-foreground text-background"
                   onClick={saveSmsConfig}
                   disabled={isTesting}
@@ -393,7 +431,7 @@ export function SettingsPanelV2() {
               <Alert>
                 <AlertTriangle className="w-4 h-4" />
                 <AlertDescription>
-                  Pour l'API, utilisez un fournisseur comme Twilio ou Nexmo. Pour Android, installez l'application passerelle.
+                  Installez l'app TextBee sur un téléphone Android connecté à internet, enregistrez-le depuis app.textbee.dev/dashboard, puis reportez ici la clé API et l'identifiant d'appareil. TextBee ne publiant pas de vérification de statut, la connexion réelle est confirmée au premier SMS envoyé.
                 </AlertDescription>
               </Alert>
             </div>
@@ -437,8 +475,8 @@ export function SettingsPanelV2() {
               </div>
               <div className="space-y-2">
                 <Label>Langue</Label>
-                <select 
-                  value={settings.language} 
+                <select
+                  value={settings.language}
                   onChange={(e) => patch({ language: e.target.value })}
                   className="h-11 w-full bg-input border border-border rounded-md px-3"
                 >
