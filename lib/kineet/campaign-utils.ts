@@ -66,7 +66,7 @@ export interface ImportResult {
 
 export function parseSpreadsheetFile(
   file: File,
-  channel: Channel,
+  channel: Channel | null,
 ): Promise<ImportResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -107,7 +107,7 @@ export function parseSpreadsheetFile(
           const lastName = String(row[columnMap.lastName ?? 0] ?? "").trim();
           const firstName = String(row[columnMap.firstName ?? 1] ?? "").trim();
           const contact = String(row[columnMap.contact ?? 2] ?? "").trim();
-          const valid = Boolean(lastName && firstName && isValidContact(contact, channel));
+          const valid = Boolean(lastName && firstName && contact && (channel === null || isValidContact(contact, channel)));
 
           if (!valid) invalidRows += 1;
 

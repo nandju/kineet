@@ -21,6 +21,7 @@ import { notify } from "./notify";
 export type DashboardSection =
   | "home"
   | "campaign"
+  | "lists"
   | "history"
   | "profile"
   | "settings";
@@ -31,7 +32,7 @@ interface DashboardContextValue {
   section: DashboardSection;
   setSection: (section: DashboardSection) => void;
   campaigns: Campaign[];
-  addCampaign: (campaign: Campaign) => void;
+  addCampaign: (campaign: Campaign) => Promise<Campaign>;
   updateCampaign: (campaignId: string, updates: Partial<Campaign>) => void;
   deleteCampaign: (campaignId: string) => void;
   profile: Profile;
@@ -103,16 +104,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [campaigns, queueManager, getProvider]);
 
   const addCampaign = useCallback(
-    (campaign: Campaign) => {
+    async (campaign: Campaign): Promise<Campaign> => {
       setCampaigns((prev) => [campaign, ...prev]);
-      if (!userId) return;
-      insertCampaign(supabase, userId, campaign)
-        .then((saved) => {
-          setCampaigns((prev) => prev.map((c) => (c.id === campaign.id ? saved : c)));
-        })
-        .catch(() => {
-          notify.error("Erreur", "La campagne n'a pas pu être enregistrée sur le serveur.");
-        });
+      if (!userId) return campaign;
+      try {
+        const saved = await insertCampaign(supabase, userId, campaign);
+        setCampaigns((prev) => prev.map((c) => (c.id === campaign.id ? saved : c)));
+        return saved;
+      } catch {
+        notify.error("Erreur", "La campagne n'a pas pu être enregistrée sur le serveur.");
+        return campaign;
+      }
     },
     [supabase, userId],
   );

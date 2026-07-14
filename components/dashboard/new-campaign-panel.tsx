@@ -11,6 +11,7 @@ import {
   Phone,
   Plus,
   Send,
+  Settings as SettingsIcon,
   Trash2,
   Upload,
   Eye,
@@ -23,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -44,18 +46,21 @@ import {
   generateId,
   parseSpreadsheetFile,
   replaceVariables,
-  simulateSmtpConnection,
 } from "@/lib/kineet/campaign-utils";
 import { SAMPLE_FIRST_NAMES, SAMPLE_LAST_NAMES } from "@/lib/kineet/data";
+import { createClient } from "@/lib/supabase/client";
+import { getProviderConfig } from "@/lib/supabase/repositories/provider-configs";
+import { insertRecipients, type RecipientInput } from "@/lib/supabase/repositories/recipients";
+import {
+  listDistributionLists,
+  listDistributionListRecipients,
+  type DistributionList,
+} from "@/lib/supabase/repositories/distribution-lists";
+import type { EmailConfig, SmsConfig } from "@/lib/types";
 
 type WizardView = "form" | "summary" | "sending" | "done";
 
 interface SenderWhatsApp { number: string; name: string }
-interface SenderEmail {
-  name: string; email: string; smtpServer: string; port: string;
-  username: string; password: string; replyTo: string; signature: string;
-}
-interface SenderSms { number: string; displayName: string }
 
 const CHANNELS: { id: Channel; icon: typeof MessageSquare; desc: string }[] = [
   { id: "whatsapp", icon: MessageSquare, desc: "Messages instantanés personnalisés" },
@@ -69,30 +74,66 @@ function emptyRecipient(): Recipient {
   return { id: generateId("rcp"), lastName: "", firstName: "", contact: "", valid: false };
 }
 
+/** Runs `worker` over `items` with at most `limit` in flight at once. */
+async function runWithConcurrency<T>(items: T[], limit: number, worker: (item: T) => Promise<void>) {
+  let index = 0;
+  async function next(): Promise<void> {
+    const current = index++;
+    if (current >= items.length) return;
+    await worker(items[current]);
+    return next();
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, next));
+}
+
 export function NewCampaignPanel() {
   const { addCampaign, setSection } = useDashboard();
+  const [supabase] = useState(() => createClient());
 
   const [view, setView] = useState<WizardView>("form");
   const [step, setStep] = useState(0);
   const [channel, setChannel] = useState<Channel | null>(null);
 
   const [waSender, setWaSender] = useState<SenderWhatsApp>({ number: "", name: "" });
-  const [emailSender, setEmailSender] = useState<SenderEmail>({
-    name: "", email: "", smtpServer: "", port: "587",
-    username: "", password: "", replyTo: "", signature: "",
-  });
-  const [smsSender, setSmsSender] = useState<SenderSms>({ number: "", displayName: "" });
   const [senderErrors, setSenderErrors] = useState<Record<string, string>>({});
+
+  // Real Email/SMS provider config, loaded from Paramètres → Fournisseurs (Supabase)
+  const [emailConfig, setEmailConfig] = useState<EmailConfig | null>(null);
+  const [smsConfig, setSmsConfig] = useState<SmsConfig | null>(null);
+  const [loadingProviders, setLoadingProviders] = useState(true);
 
   const [recipients, setRecipients] = useState<Recipient[]>([emptyRecipient()]);
   const [importMeta, setImportMeta] = useState<{ total: number; valid: number; invalid: number; columns: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const [distributionLists, setDistributionLists] = useState<DistributionList[]>([]);
+  const [selectedListId, setSelectedListId] = useState<string>("");
+  const [loadingList, setLoadingList] = useState(false);
 
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [messageErrors, setMessageErrors] = useState<Record<string, string>>({});
 
   const [sendProgress, setSendProgress] = useState({ sent: 0, pending: 0, failed: 0, total: 0, percent: 0, eta: 0 });
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !active) return;
+      const [email, sms, lists] = await Promise.all([
+        getProviderConfig(supabase, user.id, "email"),
+        getProviderConfig(supabase, user.id, "sms"),
+        listDistributionLists(supabase, user.id),
+      ]);
+      if (!active) return;
+      setEmailConfig(email as EmailConfig | null);
+      setSmsConfig(sms as SmsConfig | null);
+      setDistributionLists(lists);
+      setLoadingProviders(false);
+    })();
+    return () => { active = false; };
+  }, [supabase]);
 
   const validRecipients = useMemo(() => recipients.filter((r) => r.valid), [recipients]);
   const previewRecipient = validRecipients[0] ?? {
@@ -101,10 +142,10 @@ export function NewCampaignPanel() {
 
   const senderLabel = useMemo(() => {
     if (channel === "whatsapp") return waSender.number || "—";
-    if (channel === "email") return emailSender.email || "—";
-    if (channel === "sms") return smsSender.number || "—";
+    if (channel === "email") return emailConfig?.adresseEmail || "—";
+    if (channel === "sms") return smsConfig ? `Appareil TextBee ${smsConfig.androidDeviceId}` : "—";
     return "—";
-  }, [channel, waSender, emailSender, smsSender]);
+  }, [channel, waSender, emailConfig, smsConfig]);
 
   const estimatedCost = channel ? formatCurrency(estimateCampaignCost(validRecipients.length, channel)) : "—";
 
@@ -114,25 +155,28 @@ export function NewCampaignPanel() {
   };
 
   const validateSender = () => {
-    const errs: Record<string, string> = {};
     if (channel === "whatsapp") {
+      const errs: Record<string, string> = {};
       if (!waSender.number.trim()) errs.number = "Le numéro WhatsApp est requis.";
       else if (!isValidContact(waSender.number, "whatsapp")) errs.number = "Numéro invalide.";
-    } else if (channel === "email") {
-      if (!emailSender.name.trim()) errs.name = "Le nom de l'expéditeur est requis.";
-      if (!emailSender.email.trim()) errs.email = "L'adresse e-mail est requise.";
-      else if (!isValidContact(emailSender.email, "email")) errs.email = "Adresse e-mail invalide.";
-      if (!emailSender.smtpServer.trim()) errs.smtpServer = "Le serveur SMTP est requis.";
-      if (!emailSender.port.trim()) errs.port = "Le port est requis.";
-      if (!emailSender.username.trim()) errs.username = "Le nom d'utilisateur SMTP est requis.";
-      if (!emailSender.password.trim()) errs.password = "Le mot de passe SMTP est requis.";
-    } else if (channel === "sms") {
-      if (!smsSender.number.trim()) errs.number = "Le numéro d'envoi est requis.";
-      else if (!isValidContact(smsSender.number, "sms")) errs.number = "Numéro invalide.";
-      if (!smsSender.displayName.trim()) errs.displayName = "Le nom d'affichage est requis.";
+      setSenderErrors(errs);
+      if (Object.keys(errs).length) { notify.error("Erreur de validation", "Veuillez corriger les champs indiqués."); return false; }
+      return true;
     }
-    setSenderErrors(errs);
-    if (Object.keys(errs).length) { notify.error("Erreur de validation", "Veuillez corriger les champs indiqués."); return false; }
+    if (channel === "email") {
+      if (!emailConfig) {
+        notify.error("Fournisseur e-mail non configuré", "Configurez votre SMTP dans Paramètres → Fournisseurs avant de continuer.");
+        return false;
+      }
+      return true;
+    }
+    if (channel === "sms") {
+      if (!smsConfig) {
+        notify.error("Fournisseur SMS non configuré", "Configurez TextBee dans Paramètres → Fournisseurs avant de continuer.");
+        return false;
+      }
+      return true;
+    }
     return true;
   };
 
@@ -209,54 +253,166 @@ export function NewCampaignPanel() {
     e.target.value = "";
   };
 
-  const testConnection = async () => {
-    if (!validateSender()) return;
-    await new Promise((r) => setTimeout(r, 1200));
-    const ok = simulateSmtpConnection(
-      emailSender.email, emailSender.smtpServer, emailSender.port,
-      emailSender.username, emailSender.password,
-    );
-    if (ok) notify.success("Connexion réussie", "Votre configuration SMTP est opérationnelle.");
-    else notify.error("Connexion échouée", "Vérifiez vos identifiants SMTP.");
-  };
-
-  const startSending = useCallback(() => {
-    const total = validRecipients.length;
-    const failedCount = Math.max(1, Math.floor(total * 0.02));
-    setView("sending");
-    setSendProgress({ sent: 0, pending: total, failed: 0, total, percent: 0, eta: Math.ceil(total / 50) });
-
-    let sent = 0;
-    let failed = 0;
-    const interval = setInterval(() => {
-      sent += Math.min(Math.floor(Math.random() * 8) + 3, total - sent - failed);
-      if (sent + failed >= total) {
-        sent = total - failedCount;
-        failed = failedCount;
-        clearInterval(interval);
-        setSendProgress({ sent, pending: 0, failed, total, percent: 100, eta: 0 });
-        setTimeout(() => {
-          addCampaign({
-            id: generateId("cmp"),
-            name: `Campagne ${CHANNEL_LABELS[channel!]} — ${new Date().toLocaleDateString("fr-FR")}`,
-            channel: channel!,
-            status: "sent",
-            recipients: total,
-            delivered: sent,
-            failed,
-            subject: channel === "email" ? subject : undefined,
-            message,
-            createdAt: new Date().toISOString(),
-          });
-          notify.success("Campagne envoyée", `${sent} message(s) distribué(s) avec succès.`);
-          setView("done");
-        }, 600);
+  const applyDistributionList = async (listId: string) => {
+    setSelectedListId(listId);
+    if (!listId || !channel) return;
+    setLoadingList(true);
+    try {
+      const listRecipients = await listDistributionListRecipients(supabase, listId);
+      if (listRecipients.length === 0) {
+        notify.error("Liste vide", "Cette liste de diffusion ne contient aucun contact.");
         return;
       }
-      const pending = total - sent - failed;
-      const percent = Math.round(((sent + failed) / total) * 100);
-      setSendProgress({ sent, pending, failed, total, percent, eta: Math.ceil(pending / 50) });
-    }, 200);
+      const mapped: Recipient[] = listRecipients.map((r) => ({
+        id: r.id,
+        lastName: r.nom,
+        firstName: r.prenom,
+        contact: r.contact,
+        valid: isValidContact(r.contact, channel),
+      }));
+      setRecipients(mapped);
+      setImportMeta(null);
+      const validCount = mapped.filter((r) => r.valid).length;
+      notify.success("Liste appliquée", `${validCount} contact(s) valide(s) sur ${mapped.length} pour le canal ${CHANNEL_LABELS[channel]}.`);
+    } catch {
+      notify.error("Erreur", "Impossible de charger cette liste de diffusion.");
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
+  const startSending = useCallback(async () => {
+    const total = validRecipients.length;
+    setView("sending");
+    setSendProgress({ sent: 0, pending: total, failed: 0, total, percent: 0, eta: 0 });
+
+    // WhatsApp has no real provider wired yet — keep the simulated flow.
+    if (channel === "whatsapp") {
+      const failedCount = Math.max(1, Math.floor(total * 0.02));
+      let sent = 0;
+      let failed = 0;
+      const interval = setInterval(() => {
+        sent += Math.min(Math.floor(Math.random() * 8) + 3, total - sent - failed);
+        if (sent + failed >= total) {
+          sent = total - failedCount;
+          failed = failedCount;
+          clearInterval(interval);
+          setSendProgress({ sent, pending: 0, failed, total, percent: 100, eta: 0 });
+          setTimeout(() => {
+            addCampaign({
+              id: generateId("cmp"),
+              name: `Campagne ${CHANNEL_LABELS[channel!]} — ${new Date().toLocaleDateString("fr-FR")}`,
+              channel: channel!,
+              status: "sent",
+              recipients: total,
+              delivered: sent,
+              failed,
+              message,
+              createdAt: new Date().toISOString(),
+            }).then((saved) => {
+              const rows: RecipientInput[] = validRecipients.map((r, i) => ({
+                nom: r.lastName,
+                prenom: r.firstName,
+                contact: r.contact,
+                statut: i < sent ? "sent" : "failed",
+              }));
+              insertRecipients(supabase, saved.id, rows).catch(() => {
+                notify.error("Erreur", "Le détail des destinataires n'a pas pu être enregistré.");
+              });
+            });
+            notify.success("Campagne envoyée", `${sent} message(s) distribué(s) avec succès (simulation WhatsApp).`);
+            setView("done");
+          }, 600);
+          return;
+        }
+        const pending = total - sent - failed;
+        const percent = Math.round(((sent + failed) / total) * 100);
+        setSendProgress({ sent, pending, failed, total, percent, eta: Math.ceil(pending / 50) });
+      }, 200);
+      return;
+    }
+
+    // Email / SMS: real sends through /api/send (server-side SMTP / TextBee).
+    const counts = { sent: 0, failed: 0 };
+    const results: Array<{ recipient: Recipient; success: boolean; error?: string }> = [];
+    const startedAt = Date.now();
+
+    const updateProgress = () => {
+      const done = counts.sent + counts.failed;
+      const pending = total - done;
+      const elapsedSeconds = (Date.now() - startedAt) / 1000;
+      const rate = done > 0 ? done / elapsedSeconds : 0;
+      setSendProgress({
+        sent: counts.sent,
+        failed: counts.failed,
+        pending,
+        total,
+        percent: Math.round((done / total) * 100),
+        eta: rate > 0 ? Math.ceil(pending / rate) : 0,
+      });
+    };
+
+    await runWithConcurrency(validRecipients, 3, async (recipient) => {
+      let success = false;
+      let error: string | undefined;
+      try {
+        const res = await fetch("/api/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            channel,
+            to: recipient.contact,
+            subject: channel === "email" ? replaceVariables(subject, recipient) : undefined,
+            message: replaceVariables(message, recipient),
+          }),
+        });
+        const result = await res.json();
+        success = Boolean(result.success);
+        error = result.error;
+      } catch {
+        error = "Erreur réseau.";
+      }
+      if (success) counts.sent += 1;
+      else counts.failed += 1;
+      results.push({ recipient, success, error });
+      updateProgress();
+    });
+
+    const saved = await addCampaign({
+      id: generateId("cmp"),
+      name: `Campagne ${CHANNEL_LABELS[channel!]} — ${new Date().toLocaleDateString("fr-FR")}`,
+      channel: channel!,
+      status: counts.sent > 0 ? "sent" : "failed",
+      recipients: total,
+      delivered: counts.sent,
+      failed: counts.failed,
+      subject: channel === "email" ? subject : undefined,
+      message,
+      createdAt: new Date().toISOString(),
+    });
+
+    insertRecipients(
+      supabase,
+      saved.id,
+      results.map((r) => ({
+        nom: r.recipient.lastName,
+        prenom: r.recipient.firstName,
+        contact: r.recipient.contact,
+        statut: r.success ? "sent" : "failed",
+        erreur: r.error ?? null,
+      })),
+    ).catch(() => {
+      notify.error("Erreur", "Le détail des destinataires n'a pas pu être enregistré.");
+    });
+
+    if (counts.failed === 0) {
+      notify.success("Campagne envoyée", `${counts.sent} message(s) distribué(s) avec succès.`);
+    } else if (counts.sent === 0) {
+      notify.error("Échec de l'envoi", `${counts.failed} message(s) n'ont pas pu être envoyés.`);
+    } else {
+      notify.warning("Campagne envoyée partiellement", `${counts.sent} envoyé(s), ${counts.failed} échec(s).`);
+    }
+    setView("done");
   }, [validRecipients, channel, subject, message, addCampaign]);
 
   useEffect(() => {
@@ -405,48 +561,72 @@ export function NewCampaignPanel() {
                 <Label>Nom de l&apos;expéditeur <span className="text-muted-foreground">(optionnel)</span></Label>
                 <Input value={waSender.name} onChange={(e) => setWaSender({ ...waSender, name: e.target.value })} className="h-11 bg-input" />
               </div>
-              <Alert><AlertTriangle className="w-4 h-4" /><AlertDescription>Le numéro utilisé doit être connecté à un fournisseur compatible WhatsApp.</AlertDescription></Alert>
+              <Alert><AlertTriangle className="w-4 h-4" /><AlertDescription>WhatsApp est encore simulé — aucun fournisseur réel n&apos;est branché pour ce canal.</AlertDescription></Alert>
             </div>
           )}
 
           {step === 1 && channel === "email" && (
             <div className="border border-border bg-card p-6 space-y-5 max-w-lg">
-              {([
-                ["name", "Nom de l'expéditeur", "text"],
-                ["email", "Adresse e-mail", "email"],
-                ["smtpServer", "Serveur SMTP", "text"],
-                ["port", "Port", "text"],
-                ["username", "Nom d'utilisateur SMTP", "text"],
-                ["password", "Mot de passe SMTP", "password"],
-                ["replyTo", "Adresse de réponse", "email"],
-              ] as const).map(([key, label, type]) => (
-                <div key={key} className="space-y-2">
-                  <Label>{label}</Label>
-                  <Input type={type} value={emailSender[key]} onChange={(e) => setEmailSender({ ...emailSender, [key]: e.target.value })} className="h-11 bg-input" />
-                  {senderErrors[key] && <p className="text-sm text-destructive">{senderErrors[key]}</p>}
-                </div>
-              ))}
-              <div className="space-y-2">
-                <Label>Signature</Label>
-                <Textarea value={emailSender.signature} onChange={(e) => setEmailSender({ ...emailSender, signature: e.target.value })} rows={3} className="bg-input" />
-              </div>
-              <Button variant="outline" className="rounded-full" onClick={testConnection}>Tester la connexion</Button>
+              {loadingProviders ? (
+                <p className="text-sm text-muted-foreground">Chargement de votre configuration...</p>
+              ) : emailConfig ? (
+                <>
+                  <div className="flex items-center gap-2 text-green-400">
+                    <Check className="w-4 h-4" />
+                    <span className="text-sm">Fournisseur SMTP configuré</span>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4 text-sm">
+                    <div><p className="text-muted-foreground">Expéditeur</p><p>{emailConfig.expediteur || "—"}</p></div>
+                    <div><p className="text-muted-foreground">Adresse</p><p>{emailConfig.adresseEmail}</p></div>
+                    <div><p className="text-muted-foreground">Serveur SMTP</p><p>{emailConfig.serveurSmtp}:{emailConfig.port}</p></div>
+                  </div>
+                  <Button variant="outline" className="rounded-full" onClick={() => setSection("settings")}>
+                    <SettingsIcon className="w-4 h-4 mr-2" /> Modifier dans Paramètres
+                  </Button>
+                </>
+              ) : (
+                <Alert>
+                  <AlertTriangle className="w-4 h-4" />
+                  <AlertDescription className="space-y-3">
+                    <p>Aucun fournisseur e-mail configuré. Renseignez votre SMTP (Gmail ou tout autre service) dans Paramètres avant d&apos;envoyer.</p>
+                    <Button variant="outline" className="rounded-full" onClick={() => setSection("settings")}>
+                      <SettingsIcon className="w-4 h-4 mr-2" /> Aller aux Paramètres
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
 
           {step === 1 && channel === "sms" && (
             <div className="border border-border bg-card p-6 space-y-5 max-w-lg">
-              <div className="space-y-2">
-                <Label>Numéro d&apos;envoi</Label>
-                <Input value={smsSender.number} onChange={(e) => setSmsSender({ ...smsSender, number: e.target.value })} className="h-11 bg-input" />
-                {senderErrors.number && <p className="text-sm text-destructive">{senderErrors.number}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label>Nom d&apos;affichage</Label>
-                <Input value={smsSender.displayName} onChange={(e) => setSmsSender({ ...smsSender, displayName: e.target.value })} className="h-11 bg-input" />
-                {senderErrors.displayName && <p className="text-sm text-destructive">{senderErrors.displayName}</p>}
-              </div>
-              <Alert><AlertDescription>Le numéro doit disposer d&apos;un forfait SMS actif ou être connecté à une passerelle SMS.</AlertDescription></Alert>
+              {loadingProviders ? (
+                <p className="text-sm text-muted-foreground">Chargement de votre configuration...</p>
+              ) : smsConfig ? (
+                <>
+                  <div className="flex items-center gap-2 text-green-400">
+                    <Check className="w-4 h-4" />
+                    <span className="text-sm">Fournisseur TextBee configuré</span>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4 text-sm">
+                    <div><p className="text-muted-foreground">Appareil</p><p>{smsConfig.androidDeviceId}</p></div>
+                    {smsConfig.senderId && <div><p className="text-muted-foreground">Sender ID</p><p>{smsConfig.senderId}</p></div>}
+                  </div>
+                  <Button variant="outline" className="rounded-full" onClick={() => setSection("settings")}>
+                    <SettingsIcon className="w-4 h-4 mr-2" /> Modifier dans Paramètres
+                  </Button>
+                </>
+              ) : (
+                <Alert>
+                  <AlertTriangle className="w-4 h-4" />
+                  <AlertDescription className="space-y-3">
+                    <p>Aucun fournisseur SMS configuré. Renseignez votre clé API et appareil TextBee dans Paramètres avant d&apos;envoyer.</p>
+                    <Button variant="outline" className="rounded-full" onClick={() => setSection("settings")}>
+                      <SettingsIcon className="w-4 h-4 mr-2" /> Aller aux Paramètres
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
 
@@ -455,6 +635,7 @@ export function NewCampaignPanel() {
               <TabsList>
                 <TabsTrigger value="manual">Saisie manuelle</TabsTrigger>
                 <TabsTrigger value="import">Import Excel</TabsTrigger>
+                <TabsTrigger value="list">Liste de diffusion</TabsTrigger>
               </TabsList>
               <TabsContent value="manual" className="space-y-4">
                 {recipients.map((r) => (
@@ -510,6 +691,55 @@ export function NewCampaignPanel() {
                   </div>
                 )}
               </TabsContent>
+              <TabsContent value="list" className="space-y-4">
+                {distributionLists.length === 0 ? (
+                  <Alert>
+                    <AlertTriangle className="w-4 h-4" />
+                    <AlertDescription className="space-y-3">
+                      <p>Aucune liste de diffusion enregistrée.</p>
+                      <Button variant="outline" className="rounded-full" onClick={() => setSection("lists")}>
+                        Créer une liste de diffusion
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    <div className="max-w-sm space-y-2">
+                      <Label>Choisir une liste</Label>
+                      <Select value={selectedListId} onValueChange={applyDistributionList}>
+                        <SelectTrigger className="h-11 bg-input">
+                          <SelectValue placeholder="Sélectionner une liste..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {distributionLists.map((list) => (
+                            <SelectItem key={list.id} value={list.id}>
+                              {list.nom} ({list.recipientCount})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {loadingList && <p className="text-sm text-muted-foreground">Chargement des contacts...</p>}
+                    {!loadingList && selectedListId && recipients.length > 0 && (
+                      <div className="border border-border overflow-hidden max-h-64 overflow-y-auto">
+                        <Table>
+                          <TableHeader><TableRow><TableHead>Nom</TableHead><TableHead>Prénom</TableHead><TableHead>Contact</TableHead><TableHead>Statut</TableHead></TableRow></TableHeader>
+                          <TableBody>
+                            {recipients.map((r) => (
+                              <TableRow key={r.id}>
+                                <TableCell>{r.lastName}</TableCell>
+                                <TableCell>{r.firstName}</TableCell>
+                                <TableCell>{r.contact}</TableCell>
+                                <TableCell><Badge variant={r.valid ? "secondary" : "destructive"} className="text-xs">{r.valid ? "Valide" : "Invalide"}</Badge></TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
             </Tabs>
           )}
 
@@ -528,8 +758,8 @@ export function NewCampaignPanel() {
                 {messageErrors.message && <p className="text-sm text-destructive">{messageErrors.message}</p>}
               </div>
               <p className="text-xs text-muted-foreground">Variables disponibles : <code className="font-mono">{`{{nom}}`}</code>, <code className="font-mono">{`{{prénom}}`}</code></p>
-              {channel === "email" && emailSender.signature && (
-                <div className="space-y-2"><Label>Signature</Label><p className="text-sm text-muted-foreground border border-border p-3">{emailSender.signature}</p></div>
+              {channel === "email" && emailConfig?.signature && (
+                <div className="space-y-2"><Label>Signature</Label><p className="text-sm text-muted-foreground border border-border p-3">{emailConfig.signature}</p></div>
               )}
             </div>
           )}
@@ -542,8 +772,8 @@ export function NewCampaignPanel() {
               )}
               <div className="border border-border p-4 bg-secondary/30 whitespace-pre-wrap text-sm">
                 {replaceVariables(message, previewRecipient)}
-                {channel === "email" && emailSender.signature && (
-                  <><br /><br />{emailSender.signature}</>
+                {channel === "email" && emailConfig?.signature && (
+                  <><br /><br />{emailConfig.signature}</>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">

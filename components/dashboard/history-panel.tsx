@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ArrowUpDown, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ArrowUpDown, ChevronLeft, ChevronRight, Eye, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,8 +23,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDashboard } from "@/lib/kineet/dashboard-context";
-import { CHANNEL_LABELS, type CampaignStatus, type Channel } from "@/lib/kineet/types";
+import { CHANNEL_LABELS, type Campaign, type CampaignStatus, type Channel } from "@/lib/kineet/types";
+import { createClient } from "@/lib/supabase/client";
+import { listRecipients, type RecipientRow, type RecipientStatus } from "@/lib/supabase/repositories/recipients";
 
 const PAGE_SIZE = 5;
 type SortKey = "name" | "createdAt" | "recipients";
@@ -37,13 +47,39 @@ const STATUS_LABELS: Record<CampaignStatus, string> = {
   draft: "Brouillon",
 };
 
+const RECIPIENT_STATUS_LABELS: Record<RecipientStatus, string> = {
+  waiting: "En attente",
+  sending: "Envoi...",
+  sent: "Envoyé",
+  failed: "Échoué",
+  skipped: "Ignoré",
+};
+
 export function HistoryPanel() {
   const { campaigns } = useDashboard();
+  const [supabase] = useState(() => createClient());
   const [search, setSearch] = useState("");
   const [channelFilter, setChannelFilter] = useState<Channel | "all">("all");
   const [statusFilter, setStatusFilter] = useState<CampaignStatus | "all">("all");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [selected, setSelected] = useState<Campaign | null>(null);
+  const [detailRecipients, setDetailRecipients] = useState<RecipientRow[] | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  const openDetails = async (campaign: Campaign) => {
+    setSelected(campaign);
+    setDetailRecipients(null);
+    setLoadingDetail(true);
+    try {
+      const rows = await listRecipients(supabase, campaign.id);
+      setDetailRecipients(rows);
+    } catch {
+      setDetailRecipients([]);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
@@ -144,18 +180,23 @@ export function HistoryPanel() {
                   Date <ArrowUpDown className="w-3 h-3" />
                 </button>
               </TableHead>
+              <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
                   Aucune campagne trouvée.
                 </TableCell>
               </TableRow>
             ) : (
               paginated.map((c) => (
-                <TableRow key={c.id} className="border-border">
+                <TableRow
+                  key={c.id}
+                  className="border-border cursor-pointer hover:bg-secondary/50"
+                  onClick={() => openDetails(c)}
+                >
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell><Badge variant="outline">{CHANNEL_LABELS[c.channel]}</Badge></TableCell>
                   <TableCell>
@@ -166,6 +207,9 @@ export function HistoryPanel() {
                   <TableCell className="font-mono text-sm">{c.recipients.toLocaleString("fr-FR")}</TableCell>
                   <TableCell className="font-mono text-sm text-muted-foreground">
                     {format(new Date(c.createdAt), "d MMM yyyy", { locale: fr })}
+                  </TableCell>
+                  <TableCell>
+                    <Eye className="w-4 h-4 text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ))
@@ -187,6 +231,80 @@ export function HistoryPanel() {
           </Button>
         </div>
       </div>
+
+      <Dialog open={selected !== null} onOpenChange={(open) => { if (!open) setSelected(null); }}>
+        <DialogContent className="max-w-2xl">
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selected.name}</DialogTitle>
+                <DialogDescription>
+                  {CHANNEL_LABELS[selected.channel]} — {format(new Date(selected.createdAt), "d MMM yyyy 'à' HH:mm", { locale: fr })}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                {selected.subject && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Objet</p>
+                    <p className="text-sm font-medium">{selected.subject}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Message</p>
+                  <p className="text-sm border border-border bg-secondary/30 p-3 whitespace-pre-wrap">{selected.message}</p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-muted-foreground">
+                      Destinataires ({selected.recipients.toLocaleString("fr-FR")})
+                    </p>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      {selected.delivered} envoyé(s) · {selected.failed} échec(s)
+                    </p>
+                  </div>
+                  <ScrollArea className="h-64 border border-border">
+                    {loadingDetail ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">Chargement...</p>
+                    ) : !detailRecipients || detailRecipients.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">
+                        Aucun détail de destinataire disponible pour cette campagne.
+                      </p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-border hover:bg-transparent">
+                            <TableHead>Nom</TableHead>
+                            <TableHead>Contact</TableHead>
+                            <TableHead>Statut</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {detailRecipients.map((r) => (
+                            <TableRow key={r.id} className="border-border">
+                              <TableCell className="text-sm">{r.prenom} {r.nom}</TableCell>
+                              <TableCell className="font-mono text-sm">{r.contact}</TableCell>
+                              <TableCell>
+                                <Badge variant={r.statut === "failed" ? "destructive" : "secondary"} className="text-xs">
+                                  {RECIPIENT_STATUS_LABELS[r.statut]}
+                                </Badge>
+                                {r.erreur && (
+                                  <p className="text-xs text-muted-foreground mt-1">{r.erreur}</p>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </ScrollArea>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

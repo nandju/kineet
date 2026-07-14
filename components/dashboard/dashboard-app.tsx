@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   Menu,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DashboardProvider, useDashboard, type DashboardSection } from "@/lib/kineet/dashboard-context";
 import { HomePanel } from "./home-panel";
 import { NewCampaignPanel } from "./new-campaign-panel";
+import { ListsPanel } from "./lists-panel";
 import { HistoryPanel } from "./history-panel";
 import { ProfilePanel } from "./profile-panel";
 import { SettingsPanelV2 } from "./settings-panel-v2";
@@ -23,6 +25,7 @@ import { SettingsPanelV2 } from "./settings-panel-v2";
 const NAV: { id: DashboardSection; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Accueil", icon: Home },
   { id: "campaign", label: "Nouvelle campagne", icon: PlusCircle },
+  { id: "lists", label: "Listes de diffusion", icon: Users },
   { id: "history", label: "Historique", icon: History },
   { id: "profile", label: "Profil", icon: User },
   { id: "settings", label: "Paramètres", icon: Settings },
@@ -78,6 +81,7 @@ function DashboardContent() {
   const panels: Record<DashboardSection, React.ReactNode> = {
     home: <HomePanel />,
     campaign: <NewCampaignPanel />,
+    lists: <ListsPanel />,
     history: <HistoryPanel />,
     profile: <ProfilePanel />,
     settings: <SettingsPanelV2 />,

@@ -60,7 +60,11 @@ export function LoginForm() {
     setIsSubmitting(false);
 
     if (error) {
-      notify.error("Connexion échouée", "E-mail ou mot de passe incorrect.");
+      if (error.code === "email_not_confirmed") {
+        notify.error("E-mail non confirmé", "Confirmez votre adresse e-mail via le lien reçu par e-mail avant de vous connecter.");
+      } else {
+        notify.error("Connexion échouée", "E-mail ou mot de passe incorrect.");
+      }
       return;
     }
 
