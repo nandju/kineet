@@ -10,6 +10,7 @@ const navLinks = [
   { name: "Portée",         href: "#infra"          },
   { name: "Intégrations",   href: "#integrations"  },
   { name: "Sécurité",       href: "#security"      },
+  { name: "Documentation",  href: "/documentation" },
 ];
 
 export function Navigation() {

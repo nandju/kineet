@@ -17,6 +17,7 @@ const footerLinks = {
     { name: "Tableau de bord", href: "/login" },
   ],
   Entreprise: [
+    { name: "Documentation", href: "/documentation" },
     { name: "À propos", href: "#" },
     { name: "Blog", href: "#" },
     { name: "Carrières", href: "#", badge: "Recrute" },
