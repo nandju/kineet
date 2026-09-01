@@ -111,7 +111,7 @@ export function IntegrationsSection() {
           <span className="w-12 h-px bg-foreground/20" />
         </span>
 
-        <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
+        <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display font-extrabold tracking-tight leading-[0.9] transition-all duration-1000 ${
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         }`}>
           Connectez
@@ -122,24 +122,24 @@ export function IntegrationsSection() {
         <p className={`mt-8 text-xl text-muted-foreground leading-relaxed max-w-lg mx-auto transition-all duration-1000 delay-100 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}>
-          Kineet se connecte à vos outils et fournisseurs préférés. Synchronisez vos contacts, automatisez vos campagnes et intégrez-vous à votre stack.
+          Chapnet se connecte à vos outils et fournisseurs préférés. Synchronisez vos contacts, automatisez vos campagnes et intégrez-vous à votre stack.
         </p>
       </div>
 
-      {/* Full-width image */}
-      <div className={`relative left-1/2 -translate-x-1/2 w-screen -mt-16 transition-all duration-1000 delay-200 ${
+      {/* Decorative gradient divider */}
+      <div className={`relative h-40 lg:h-56 mt-12 overflow-hidden transition-all duration-1000 delay-200 ${
         isVisible ? "opacity-100" : "opacity-0"
       }`}>
-        <img
-          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/connection-KeJwWPQvn6l0a7C48tCARYtNEdC92H.png"
-          alt=""
-          aria-hidden="true"
-          className="w-full h-auto object-cover"
-        />
+        <div className="absolute inset-0 opacity-[0.35]" style={{
+          backgroundImage: "radial-gradient(currentColor 1.5px, transparent 1.5px)",
+          backgroundSize: "22px 22px",
+          color: "var(--border)",
+        }} />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] rounded-full brand-gradient opacity-20 blur-[80px]" />
       </div>
 
-      {/* Integration grid — remonte sur l'image avec spacing mobile approprié */}
-      <div className="relative z-10 mt-0 lg:-mt-24 max-w-[1400px] mx-auto px-6 lg:px-12">
+      {/* Integration grid */}
+      <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-16">
           {integrations.map((integration, index) => (
             <div
@@ -172,7 +172,7 @@ export function IntegrationsSection() {
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 z-0"
                   style={{
-                    background: `radial-gradient(200px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255,255,255,0.1) 0%, transparent 70%)`,
+                    background: `radial-gradient(200px circle at ${mousePos.x}px ${mousePos.y}px, rgba(46,107,255,0.08) 0%, transparent 70%)`,
                   }}
                 />
               )}
@@ -187,7 +187,7 @@ export function IntegrationsSection() {
 
               {/* Logo */}
               <div className={`w-10 h-10 mb-6 flex items-center justify-center transition-colors ${
-                hoveredIndex === index ? "text-white" : "text-foreground/60"
+                hoveredIndex === index ? "text-[#2E6BFF]" : "text-foreground/60"
               }`}>
                 {logos[integration.name]}
               </div>
@@ -215,7 +215,7 @@ export function IntegrationsSection() {
               { value: "Webhooks", label: "Sync temps réel" },
             ].map((stat) => (
               <div key={stat.label} className="flex items-baseline gap-3">
-                <span className="text-3xl font-display">{stat.value}</span>
+                <span className="text-3xl font-display font-bold">{stat.value}</span>
                 <span className="text-sm text-muted-foreground">{stat.label}</span>
               </div>
             ))}

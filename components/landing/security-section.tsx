@@ -8,25 +8,21 @@ const securityFeatures = [
     icon: Shield,
     title: "Envoi avec consentement",
     description: "Gestion intégrée du désabonnement pour chaque canal.",
-    image: "/images/isolated.jpg",
   },
   {
     icon: Lock,
     title: "Contacts chiffrés",
     description: "Données des destinataires chiffrées au repos et en transit.",
-    image: "/images/encrypted.jpg",
   },
   {
     icon: Eye,
     title: "Historique complet",
     description: "Chaque envoi enregistré et entièrement consultable.",
-    image: "/images/audit.jpg",
   },
   {
     icon: FileCheck,
     title: "Conformité fournisseurs",
     description: "Aligné avec les politiques WhatsApp, SMTP et SMS.",
-    image: "/images/permissions.jpg",
   },
 ];
 
@@ -71,7 +67,7 @@ export function SecuritySection() {
           </span>
           
           {/* Title — full width */}
-          <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9] mb-12 transition-all duration-1000 ${
+          <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display font-extrabold tracking-tight leading-[0.9] mb-12 transition-all duration-1000 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}>
             Powerful,
@@ -92,36 +88,36 @@ export function SecuritySection() {
         {/* Main content */}
         <div className="grid lg:grid-cols-12 gap-6">
           {/* Large visual card */}
-          <div className={`lg:col-span-7 relative p-8 lg:p-12 border border-foreground/10 min-h-[400px] overflow-hidden transition-all duration-700 ${
+          <div className={`lg:col-span-7 relative p-8 lg:p-12 rounded-3xl border border-border bg-card min-h-[400px] overflow-hidden transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}>
-            {/* Dynamic feature image with cross-fade — desktop only */}
-            <div className="absolute inset-0 pointer-events-none items-center justify-end hidden lg:flex">
+            {/* Active feature icon — large, gradient circle — desktop only */}
+            <div className="absolute inset-0 pointer-events-none items-center justify-end pr-12 hidden lg:flex">
               {securityFeatures.map((feature, index) => (
-                <img
-                  key={feature.image}
-                  src={feature.image}
-                  alt={feature.title}
-                  className="absolute h-3/4 w-3/4 object-contain object-right transition-opacity duration-500"
-                  style={{ opacity: activeFeature === index ? 0.85 : 0 }}
-                />
+                <div
+                  key={feature.title}
+                  className="absolute w-48 h-48 rounded-full bg-[#2E6BFF]/10 flex items-center justify-center transition-opacity duration-500"
+                  style={{ opacity: activeFeature === index ? 1 : 0 }}
+                >
+                  <feature.icon className="w-20 h-20 text-[#2E6BFF]" strokeWidth={1.5} />
+                </div>
               ))}
             </div>
-            
+
             <div className="relative z-10">
               <span className="font-mono text-sm text-muted-foreground">Active protection</span>
               <div className="mt-8">
-                <span className="text-7xl lg:text-8xl font-display">0</span>
+                <span className="text-7xl lg:text-8xl font-display font-extrabold brand-gradient-text">0</span>
                 <span className="block text-muted-foreground mt-2">Data incidents this year</span>
               </div>
             </div>
-            
+
             {/* Certification badges */}
             <div className="absolute bottom-8 left-8 right-8 flex flex-wrap gap-2">
               {certifications.map((cert, index) => (
                 <span
                   key={cert}
-                  className={`px-3 py-1 border border-foreground/10 text-xs font-mono text-muted-foreground transition-all duration-500 ${
+                  className={`px-3 py-1 border border-border text-xs font-mono text-muted-foreground transition-all duration-500 ${
                     isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                   }`}
                   style={{ transitionDelay: `${index * 100 + 300}ms` }}
@@ -137,20 +133,20 @@ export function SecuritySection() {
             {securityFeatures.map((feature, index) => (
               <div
                 key={feature.title}
-                className={`p-6 border transition-all duration-500 cursor-default ${
-                  activeFeature === index 
-                    ? "border-foreground/30 bg-foreground/[0.04]" 
-                    : "border-foreground/10"
+                className={`p-6 rounded-2xl border bg-card transition-all duration-500 cursor-default ${
+                  activeFeature === index
+                    ? "border-[#2E6BFF]/40 shadow-md shadow-[#2E6BFF]/5"
+                    : "border-border"
                 } ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}
                 style={{ transitionDelay: `${index * 80}ms` }}
                 onClick={() => setActiveFeature(index)}
                 onMouseEnter={() => setActiveFeature(index)}
               >
                 <div className="flex items-start gap-4">
-                  <div className={`shrink-0 w-10 h-10 flex items-center justify-center border transition-colors ${
-                    activeFeature === index 
-                      ? "border-foreground bg-foreground text-background" 
-                      : "border-foreground/20"
+                  <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                    activeFeature === index
+                      ? "brand-gradient text-white"
+                      : "border border-border text-foreground/60"
                   }`}>
                     <feature.icon className="w-5 h-5" />
                   </div>

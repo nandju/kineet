@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChapnetMark } from "@/components/landing/logo";
 
 const words = ["WhatsApp", "Email", "SMS", "tous"];
 
@@ -61,8 +64,8 @@ function BlurWord({ word, trigger }: { word: string; trigger: number }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger]);
 
-  // gradient colours cycling across letter positions
-  const gradientColors = ["#eca8d6", "#a78bfa", "#67e8f9", "#fbbf24", "#eca8d6"];
+  // gradient colours cycling across letter positions — brand blue → violet → orange
+  const gradientColors = ["#2E6BFF", "#8B5CF6", "#C2599B", "#FF7A45", "#2E6BFF"];
 
   return (
     <>
@@ -92,7 +95,7 @@ function BlurWord({ word, trigger }: { word: string; trigger: number }) {
               display: "inline-block",
               opacity: letterStates[i]?.opacity ?? 0,
               filter: `blur(${letterStates[i]?.blur ?? 20}px)`,
-              color: showGradient ? `rgb(${r},${g},${b})` : "white",
+              color: showGradient ? `rgb(${r},${g},${b})` : "var(--foreground)",
               transition: "color 0.4s ease",
             }}
           >
@@ -120,107 +123,124 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex flex-col justify-center items-start overflow-hidden bg-black">
-      {/* Background video */}
-      <div className="absolute inset-0 z-0">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          aria-hidden="true"
-          className="w-full h-full object-cover object-center opacity-80"
-        >
-          <source src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bg-hero-0BnFGdr81Ifnj3WbBZoNt1KE4D5DMT.mp4" type="video/mp4" />
-        </video>
-        {/* Subtle overlay to ensure text readability on the left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
-      </div>
+    <section className="relative min-h-screen flex flex-col justify-center overflow-hidden bg-background pt-32 pb-16 lg:pt-40">
+      {/* Soft brand-colored glows */}
+      <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-[#2E6BFF]/10 blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[#FF7A45]/10 blur-[120px] pointer-events-none" />
 
-      {/* Subtle grid lines */}
-      <div className="absolute inset-0 z-[2] overflow-hidden pointer-events-none opacity-20">
-        {[...Array(8)].map((_, i) => (
+      <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-12">
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          {/* Left: copy */}
+          <div className="lg:col-span-7">
+            {/* Eyebrow */}
+            <div
+              className={`mb-8 transition-all duration-700 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
+            >
+              <span className="inline-flex items-center gap-3 text-sm font-mono font-medium tracking-wide brand-gradient-text">
+                Envoyez. Touchez. Rassurez.
+              </span>
+            </div>
+
+            {/* Main headline */}
+            <div className="mb-10">
+              <h1
+                className={`text-left text-[clamp(2.25rem,5.5vw,6rem)] font-display font-extrabold leading-[0.98] tracking-tight text-foreground transition-all duration-1000 ${
+                  isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                }`}
+              >
+                <span className="block">Touchez des milliers,</span>
+                <span className="block">
+                  un message sur{" "}
+                  <span className="relative inline-block">
+                    <BlurWord word={words[wordIndex]} trigger={wordIndex} />
+                  </span>
+                </span>
+              </h1>
+            </div>
+
+            <p
+              className={`text-lg text-muted-foreground max-w-lg mb-10 leading-relaxed transition-all duration-1000 delay-100 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
+            >
+              Campagnes WhatsApp, Email et SMS depuis une seule plateforme. Créez, prévisualisez et distribuez à des milliers de destinataires en quelques minutes.
+            </p>
+
+            <div
+              className={`flex flex-col sm:flex-row items-start gap-4 mb-16 transition-all duration-1000 delay-200 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
+            >
+              <Button asChild size="lg" className="brand-gradient border-0 text-white px-8 h-14 text-base rounded-full group hover:opacity-90">
+                <a href="/login">
+                  Commencer gratuitement
+                  <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                </a>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="h-14 px-8 text-base rounded-full border-border hover:bg-accent">
+                <a href="#how-it-works">Voir comment ça marche</a>
+              </Button>
+            </div>
+
+            {/* Stats */}
+            <div
+              className={`flex items-start gap-10 lg:gap-16 transition-all duration-700 delay-500 ${
+                isVisible ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              {[
+                { value: "12M+", label: "messages distribués" },
+                { value: "98,9%", label: "taux de livraison moyen" },
+                { value: "3", label: "canaux en un seul endroit" },
+              ].map((stat) => (
+                <div key={stat.label} className="flex flex-col gap-1">
+                  <span className="text-2xl lg:text-3xl font-display font-bold text-foreground">{stat.value}</span>
+                  <span className="text-xs text-muted-foreground leading-tight max-w-[9rem]">
+                    {stat.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: brand panel */}
           <div
-            key={`h-${i}`}
-            className="absolute h-px bg-white/10"
-            style={{
-              top: `${12.5 * (i + 1)}%`,
-              left: 0,
-              right: 0,
-            }}
-          />
-        ))}
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={`v-${i}`}
-            className="absolute w-px bg-white/10"
-            style={{
-              left: `${8.33 * (i + 1)}%`,
-              top: 0,
-              bottom: 0,
-            }}
-          />
-        ))}
-      </div>
-      
-      <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-12 py-32 lg:py-40">
-        <div className="lg:max-w-[55%]">
-        {/* Eyebrow */}
-        <div 
-          className={`mb-8 transition-all duration-700 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          }`}
-        >
-          <span className="inline-flex items-center gap-3 text-sm font-mono text-white/60">
-            <span className="w-8 h-px bg-white/30" />
-            Campagnes WhatsApp, Email et SMS depuis une seule plateforme
-          </span>
-        </div>
-        
-        {/* Main headline */}
-        <div className="mb-12">
-          <h1 
-            className={`text-left text-[clamp(2rem,6vw,7rem)] font-display leading-[0.92] tracking-tight text-white transition-all duration-1000 ${
+            className={`lg:col-span-5 transition-all duration-1000 delay-300 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
           >
-            <span className="block whitespace-nowrap">Touchez des milliers,</span>
-            <span className="block whitespace-nowrap">
-              un message sur{" "}
-              <span className="relative inline-block">
-                <BlurWord word={words[wordIndex]} trigger={wordIndex} />
-              </span>
-            </span>
-          </h1>
-        </div>
-        </div>
-      </div>
-      
-      {/* Stats — 3 metrics static, no auto-scroll */}
-      <div 
-        className={`absolute bottom-12 left-0 right-0 px-6 lg:px-12 transition-all duration-700 delay-500 ${
-          isVisible ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <div className="max-w-[1400px] mx-auto flex items-start gap-10 lg:gap-20">
-          {[
-            { value: "12M+", label: "messages distribués" },
-            { value: "98,9%", label: "taux de livraison moyen" },
-            { value: "3", label: "canaux en un seul endroit" },
-          ].map((stat) => (
-            <div key={stat.label} className="flex flex-col gap-2">
-              <span className="text-3xl lg:text-4xl font-display text-white">{stat.value}</span>
-              <span className="text-xs text-white/50 leading-tight">
-                {stat.label}
-              </span>
+            <div className="relative rounded-[2rem] bg-[oklch(0.20_0.03_265)] p-10 lg:p-12 overflow-hidden">
+              {/* Grid texture */}
+              <div className="absolute inset-0 opacity-[0.06]" style={{
+                backgroundImage: "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
+                backgroundSize: "28px 28px",
+              }} />
+
+              <div className="relative z-10 flex flex-col items-center text-center gap-8">
+                <ChapnetMark className="w-16 h-16" />
+                <div>
+                  <span className="block font-display font-extrabold text-3xl tracking-tight text-white">CHAPNET</span>
+                  <span className="block mt-2 text-sm text-white/50 tracking-[0.2em] uppercase">Envoyez. Touchez. Rassurez.</span>
+                </div>
+
+                {/* Phone mockup */}
+                <div className="relative mt-4 w-40 h-80 rounded-[2rem] border-4 border-white/15 bg-white/5 backdrop-blur-sm flex items-center justify-center">
+                  <div className="absolute top-3 w-12 h-1.5 rounded-full bg-white/20" />
+                  <div className="w-16 h-16 rounded-2xl brand-gradient flex items-center justify-center">
+                    <ChapnetMark className="w-8 h-8 [&_circle]:fill-white [&_path]:stroke-white" />
+                  </div>
+                  <div className="absolute bottom-6 left-6 right-6 flex flex-col gap-2">
+                    <div className="h-2 rounded-full bg-white/15 w-full" />
+                    <div className="h-2 rounded-full bg-white/10 w-2/3" />
+                  </div>
+                </div>
+              </div>
             </div>
-          ))}
+          </div>
         </div>
       </div>
-
-      {/* Scroll indicator */}
-
     </section>
   );
 }

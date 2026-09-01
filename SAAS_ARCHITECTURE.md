@@ -1,8 +1,8 @@
-# KINEET SaaS Architecture Documentation
+# CHAPNET SaaS Architecture Documentation
 
 ## Overview
 
-The Kineet platform has been transformed into a full SaaS-ready application with a modular architecture designed to work with external sending services (Email, WhatsApp, SMS) or compatible gateways.
+The Chapnet platform has been transformed into a full SaaS-ready application with a modular architecture designed to work with external sending services (Email, WhatsApp, SMS) or compatible gateways.
 
 ## Architecture Layers
 
@@ -393,7 +393,7 @@ components/dashboard/
 
 ## Summary
 
-The Kineet platform now has a complete SaaS-ready architecture that:
+The Chapnet platform now has a complete SaaS-ready architecture that:
 - Separates concerns into distinct layers
 - Provides abstraction for easy provider replacement
 - Supports non-blocking queue processing

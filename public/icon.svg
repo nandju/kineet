@@ -1,26 +1,16 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    @media (prefers-color-scheme: light) {
-      .background { fill: black; }
-      .foreground { fill: white; }
-    }
-    @media (prefers-color-scheme: dark) {
-      .background { fill: white; }
-      .foreground { fill: black; }
-    }
-  </style>
-  <g clip-path="url(#clip0_7960_43945)">
-    <rect class="background" width="180" height="180" rx="37" />
-    <g style="transform: scale(95%); transform-origin: center">
-      <path class="foreground"
-        d="M101.141 53H136.632C151.023 53 162.689 64.6662 162.689 79.0573V112.904H148.112V79.0573C148.112 78.7105 148.098 78.3662 148.072 78.0251L112.581 112.898C112.701 112.902 112.821 112.904 112.941 112.904H148.112V126.672H112.941C98.5504 126.672 86.5638 114.891 86.5638 100.5V66.7434H101.141V100.5C101.141 101.15 101.191 101.792 101.289 102.422L137.56 66.7816C137.255 66.7563 136.945 66.7434 136.632 66.7434H101.141V53Z" />
-      <path class="foreground"
-        d="M65.2926 124.136L14 66.7372H34.6355L64.7495 100.436V66.7372H80.1365V118.47C80.1365 126.278 70.4953 129.958 65.2926 124.136Z" />
-    </g>
-  </g>
   <defs>
-    <clipPath id="clip0_7960_43945">
-      <rect width="180" height="180" fill="white" />
-    </clipPath>
+    <linearGradient id="chapnet-tile" x1="20" y1="30" x2="160" y2="150" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2E6BFF" />
+      <stop offset="55%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#FF7A45" />
+    </linearGradient>
   </defs>
+  <rect width="180" height="180" rx="40" fill="url(#chapnet-tile)" />
+  <g stroke="white" stroke-linecap="round" fill="none">
+    <path d="M128 47C117 37 102 31 86 31 57 31 32 56 32 87s25 56 56 56c16 0 31-6.7 41-17.5" stroke-width="16" />
+    <path d="M107 63c-6-5.5-14-8.9-23-8.9-18.5 0-33.5 15.2-33.5 33.9S65.5 121 84 121c9 0 17-3.4 23-9" stroke-width="16" />
+  </g>
+  <circle cx="125" cy="43" r="10" fill="white" />
+  <circle cx="125" cy="131" r="10" fill="white" />
 </svg>

@@ -286,7 +286,7 @@ export function SettingsPanelV2() {
                   onChange={(e) => setEmailForm({ ...emailForm, signature: e.target.value })}
                   rows={3}
                   className="bg-input resize-none"
-                  placeholder="Cordialement, L'équipe Kineet"
+                  placeholder="Cordialement, L'équipe Chapnet"
                 />
               </div>
 
@@ -413,7 +413,7 @@ export function SettingsPanelV2() {
                     value={smsForm.senderId}
                     onChange={(e) => setSmsForm({ ...smsForm, senderId: e.target.value })}
                     className="h-11 bg-input"
-                    placeholder="KINEET"
+                    placeholder="CHAPNET"
                   />
                 </div>
               </div>

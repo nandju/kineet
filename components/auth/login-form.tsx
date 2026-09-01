@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ChapnetLogo } from "@/components/landing/logo";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
@@ -68,7 +69,7 @@ export function LoginForm() {
       return;
     }
 
-    notify.success("Connexion réussie", "Bienvenue sur Kineet.");
+    notify.success("Connexion réussie", "Bienvenue sur Chapnet.");
     router.push("/dashboard");
     router.refresh();
   };
@@ -82,11 +83,10 @@ export function LoginForm() {
     >
       <div className="mb-10">
         <Link href="/" className="inline-flex items-center gap-2 group mb-12">
-          <span className="font-display text-2xl tracking-tight text-foreground">KINEET</span>
-          <span className="font-mono text-xs mt-1 text-muted-foreground">TM</span>
+          <ChapnetLogo markClassName="w-7 h-7" wordmarkClassName="text-2xl" />
         </Link>
-        <h1 className="font-display text-4xl lg:text-5xl tracking-tight text-foreground mb-4">
-          Connectez-vous à votre compte Kineet
+        <h1 className="font-display font-bold text-4xl lg:text-5xl tracking-tight text-foreground mb-4">
+          Connectez-vous à votre compte Chapnet
         </h1>
         <p className="text-muted-foreground">
           Accédez à votre tableau de bord pour gérer vos campagnes WhatsApp, Email et SMS.

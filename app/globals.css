@@ -4,45 +4,51 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.06 0.008 260);
-  --foreground: oklch(0.94 0.005 90);
-  --card: oklch(0.09 0.008 260);
-  --card-foreground: oklch(0.94 0.005 90);
-  --popover: oklch(0.09 0.008 260);
-  --popover-foreground: oklch(0.94 0.005 90);
-  --primary: oklch(0.94 0.005 90);
-  --primary-foreground: oklch(0.06 0.008 260);
-  --secondary: oklch(0.12 0.008 260);
-  --secondary-foreground: oklch(0.94 0.005 90);
-  --muted: oklch(0.12 0.008 260);
-  --muted-foreground: oklch(0.55 0.015 90);
-  --accent: oklch(0.14 0.01 260);
-  --accent-foreground: oklch(0.94 0.005 90);
+  --background: oklch(0.99 0.004 90);
+  --foreground: oklch(0.20 0.03 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.03 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.03 265);
+  --primary: oklch(0.20 0.03 265);
+  --primary-foreground: oklch(0.99 0.004 90);
+  --secondary: oklch(0.96 0.006 265);
+  --secondary-foreground: oklch(0.20 0.03 265);
+  --muted: oklch(0.96 0.006 265);
+  --muted-foreground: oklch(0.48 0.02 265);
+  --accent: oklch(0.95 0.02 265);
+  --accent-foreground: oklch(0.20 0.03 265);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.94 0.005 90);
-  --border: oklch(0.18 0.008 260);
-  --input: oklch(0.14 0.008 260);
-  --ring: oklch(0.94 0.005 90);
-  --chart-1: oklch(0.94 0.005 90);
-  --chart-2: oklch(0.72 0.01 90);
-  --chart-3: oklch(0.52 0.015 90);
+  --destructive-foreground: oklch(0.99 0.004 90);
+  --border: oklch(0.90 0.008 265);
+  --input: oklch(0.93 0.008 265);
+  --ring: oklch(0.55 0.18 265);
+  --chart-1: oklch(0.55 0.18 265);
+  --chart-2: oklch(0.60 0.19 300);
+  --chart-3: oklch(0.70 0.19 40);
   --chart-4: oklch(0.35 0.01 90);
   --chart-5: oklch(0.20 0.008 90);
-  --radius: 0.25rem;
-  --sidebar: oklch(0.06 0.008 260);
-  --sidebar-foreground: oklch(0.94 0.005 90);
-  --sidebar-primary: oklch(0.94 0.005 90);
-  --sidebar-primary-foreground: oklch(0.06 0.008 260);
-  --sidebar-accent: oklch(0.12 0.008 260);
-  --sidebar-accent-foreground: oklch(0.94 0.005 90);
-  --sidebar-border: oklch(0.18 0.008 260);
-  --sidebar-ring: oklch(0.55 0.015 90);
+  --radius: 0.75rem;
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.20 0.03 265);
+  --sidebar-primary: oklch(0.20 0.03 265);
+  --sidebar-primary-foreground: oklch(0.99 0.004 90);
+  --sidebar-accent: oklch(0.96 0.006 265);
+  --sidebar-accent-foreground: oklch(0.20 0.03 265);
+  --sidebar-border: oklch(0.90 0.008 265);
+  --sidebar-ring: oklch(0.55 0.18 265);
+
+  /* Chapnet brand */
+  --brand-blue: #2E6BFF;
+  --brand-violet: #8B5CF6;
+  --brand-orange: #FF7A45;
+  --brand-gradient: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-violet) 55%, var(--brand-orange) 100%);
 }
 
 @theme inline {
   --font-sans: var(--font-instrument), 'Instrument Sans', system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  --font-display: var(--font-instrument-serif), 'Instrument Serif', Georgia, serif;
+  --font-display: var(--font-manrope), 'Manrope', system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -179,23 +185,40 @@
   }
   
   .how-it-works-bg {
-    background-color: oklch(0.10 0.008 260);
+    background-color: var(--muted);
   }
 
   .word-gradient {
     background: linear-gradient(
       45deg,
-      #eca8d6 0%,
-      #a78bfa 25%,
-      #67e8f9 50%,
-      #fbbf24 75%,
-      #eca8d6 100%
+      #2E6BFF 0%,
+      #8B5CF6 35%,
+      #C2599B 60%,
+      #FF7A45 100%
     );
     background-size: 300% 300%;
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: gradient-shift 1.5s ease infinite;
+  }
+
+  .brand-gradient {
+    background: var(--brand-gradient);
+  }
+
+  .brand-gradient-text {
+    background: var(--brand-gradient);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .brand-gradient-border {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(var(--background), var(--background)) padding-box,
+      var(--brand-gradient) border-box;
   }
 
   @keyframes gradient-shift {

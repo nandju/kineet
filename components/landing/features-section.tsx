@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { MessageCircle, Mail, MessageSquare } from "lucide-react";
 
 const features = [
   {
@@ -99,11 +100,11 @@ function ParticleVisualization() {
         const y = by + flowY + influence * Math.sin(time + p.phase) * 36;
 
         const pulse = Math.sin(time * p.speed + p.phase) * 0.5 + 0.5;
-        const alpha = 0.08 + pulse * 0.18 + influence * 0.3;
+        const alpha = 0.10 + pulse * 0.22 + influence * 0.35;
 
         ctx.beginPath();
         ctx.arc(x, y, p.radius + pulse * 0.8, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.fillStyle = `rgba(46, 107, 255, ${alpha})`;
         ctx.fill();
       });
 
@@ -161,7 +162,7 @@ export function FeaturesSection() {
                 Canaux
               </span>
               <h2
-                className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
+                className={`text-6xl md:text-7xl lg:text-[128px] font-display font-extrabold tracking-tight leading-[0.9] transition-all duration-1000 ${
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
               >
@@ -174,7 +175,7 @@ export function FeaturesSection() {
               <p className={`text-xl text-muted-foreground leading-relaxed transition-all duration-1000 delay-200 ${
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}>
-                Lancez des campagnes WhatsApp, Email et SMS à des milliers de personnes sans quitter Kineet.
+                Lancez des campagnes WhatsApp, Email et SMS à des milliers de personnes sans quitter Chapnet.
               </p>
             </div>
           </div>
@@ -183,41 +184,54 @@ export function FeaturesSection() {
         {/* Bento Grid Layout */}
         <div className="grid lg:grid-cols-12 gap-4 lg:gap-6">
           {/* Large feature card */}
-          <div 
-            className={`lg:col-span-12 relative bg-black border border-foreground/10 min-h-[500px] overflow-hidden group transition-all duration-700 flex ${
+          <div
+            className={`lg:col-span-12 relative bg-card border border-border rounded-3xl min-h-[500px] overflow-hidden group transition-all duration-700 flex ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
             }`}
             onMouseEnter={() => setActiveFeature(0)}
           >
             {/* Left: text content */}
-            <div className="relative flex-1 p-8 lg:p-12 bg-black">
+            <div className="relative flex-1 p-8 lg:p-12 bg-card">
               <ParticleVisualization />
               <div className="relative z-10">
                 <span className="font-mono text-sm text-muted-foreground">{features[0].number}</span>
-                <h3 className="text-3xl lg:text-4xl font-display mt-4 mb-6 group-hover:translate-x-2 transition-transform duration-500">
+                <h3 className="text-3xl lg:text-4xl font-display font-bold mt-4 mb-6 group-hover:translate-x-2 transition-transform duration-500">
                   {features[0].title}
                 </h3>
                 <p className="text-lg text-muted-foreground leading-relaxed max-w-md mb-8">
                   {features[0].description}
                 </p>
                 <div>
-                  <span className="text-5xl lg:text-6xl font-display">{features[0].stats.value}</span>
+                  <span className="text-5xl lg:text-6xl font-display font-bold brand-gradient-text">{features[0].stats.value}</span>
                   <span className="block text-sm text-muted-foreground font-mono mt-2">{features[0].stats.label}</span>
                 </div>
               </div>
             </div>
 
-            {/* Right: mirrored image, full height */}
-            <div className="hidden lg:block relative w-[42%] shrink-0 overflow-hidden">
-              <img
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Upscaled%20Image%20%2812%29-ng3RrNnsPMJ5CrtOjcPTmhHg01W11q.png"
-                alt=""
-                aria-hidden="true"
-                className="absolute inset-0 w-full h-full object-cover object-center"
-                style={{ transform: "scaleX(-1)" }}
-              />
-              {/* Fade left edge into black */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-transparent" />
+            {/* Right: channel bubbles panel */}
+            <div className="hidden lg:flex relative w-[42%] shrink-0 overflow-hidden items-center justify-center bg-[oklch(0.20_0.03_265)]">
+              <div className="absolute inset-0 opacity-[0.08]" style={{
+                backgroundImage: "radial-gradient(white 1px, transparent 1px)",
+                backgroundSize: "24px 24px",
+              }} />
+              <div className="relative z-10 flex flex-col gap-6">
+                {[
+                  { icon: MessageCircle, label: "WhatsApp" },
+                  { icon: Mail, label: "Email" },
+                  { icon: MessageSquare, label: "SMS" },
+                ].map((channel, i) => (
+                  <div
+                    key={channel.label}
+                    className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 backdrop-blur-sm"
+                    style={{ transform: `translateX(${i % 2 === 0 ? -12 : 12}px)` }}
+                  >
+                    <div className="w-10 h-10 rounded-xl brand-gradient flex items-center justify-center shrink-0">
+                      <channel.icon className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-white font-medium">{channel.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

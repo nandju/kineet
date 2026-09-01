@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DashboardProvider, useDashboard, type DashboardSection } from "@/lib/kineet/dashboard-context";
+import { ChapnetLogo } from "@/components/landing/logo";
 import { HomePanel } from "./home-panel";
 import { NewCampaignPanel } from "./new-campaign-panel";
 import { ListsPanel } from "./lists-panel";
@@ -38,8 +39,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     <nav className="flex flex-col h-full">
       <div className="p-6 border-b border-sidebar-border">
         <a href="/" className="inline-flex items-center gap-2">
-          <span className="font-display text-xl tracking-tight">KINEET</span>
-          <span className="font-mono text-[10px] mt-0.5 text-muted-foreground">TM</span>
+          <ChapnetLogo markClassName="w-6 h-6" wordmarkClassName="text-lg" />
         </a>
       </div>
       <div className="flex-1 p-4 space-y-1">
@@ -95,7 +95,7 @@ function DashboardContent() {
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="lg:hidden flex items-center justify-between p-4 border-b border-border">
-          <a href="/" className="font-display text-lg">KINEET</a>
+          <a href="/"><ChapnetLogo markClassName="w-6 h-6" wordmarkClassName="text-lg" /></a>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon"><Menu className="w-5 h-5" /></Button>

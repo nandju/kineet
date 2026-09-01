@@ -1,32 +1,31 @@
 import React from "react"
 import type { Metadata } from 'next'
-import { Instrument_Sans, Instrument_Serif, JetBrains_Mono } from 'next/font/google'
+import { Instrument_Sans, Manrope, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
-const instrumentSans = Instrument_Sans({ 
+const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
   variable: '--font-instrument'
 });
 
-const instrumentSerif = Instrument_Serif({ 
+const manrope = Manrope({
   subsets: ["latin"],
-  weight: "400",
-  variable: '--font-instrument-serif'
+  variable: '--font-manrope'
 });
 
-const jetbrainsMono = JetBrains_Mono({ 
+const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: '--font-jetbrains'
 });
 
 export const metadata: Metadata = {
-  title: 'KINEET — Communiquez avec des milliers de personnes depuis une seule plateforme',
-  description: 'Kineet est la plateforme professionnelle pour envoyer des campagnes WhatsApp, Email et SMS depuis un seul endroit. Créez, prévisualisez et distribuez à des milliers de destinataires.',
+  title: 'CHAPNET — Envoyez. Touchez. Rassurez.',
+  description: 'Chapnet est la plateforme professionnelle pour envoyer des campagnes WhatsApp, Email et SMS depuis un seul endroit. Créez, prévisualisez et distribuez à des milliers de destinataires.',
   generator: 'v0.app',
   icons: {
-    icon: '/icone.png',
+    icon: '/icon.svg',
   },
 }
 
@@ -37,9 +36,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className={`${instrumentSans.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className={`${instrumentSans.variable} ${manrope.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         {children}
-        <Toaster position="top-right" richColors closeButton theme="dark" />
+        <Toaster position="top-right" richColors closeButton theme="light" />
         <Analytics />
       </body>
     </html>

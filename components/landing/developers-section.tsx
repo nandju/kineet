@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 
 const features = [
-  { 
-    title: "Import Excel et CSV", 
-    description: "Déposez un fichier et Kineet détecte chaque colonne."
+  {
+    title: "Import Excel et CSV",
+    description: "Déposez un fichier et Chapnet détecte chaque colonne."
   },
   { 
     title: "Aperçu en direct", 
@@ -23,7 +23,7 @@ const features = [
 
 export function DevelopersSection() {
   const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLSection>(null);
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -40,22 +40,13 @@ export function DevelopersSection() {
   return (
     <section id="developers" ref={sectionRef} className="relative py-24 lg:py-32 overflow-hidden">
 
-      {/* Image — absolute, bottom-right, behind all content */}
+      {/* Decorative brand glow — absolute, bottom-right, behind all content */}
       <div
         className={`absolute bottom-0 right-0 w-[55%] h-[85%] pointer-events-none transition-all duration-1000 delay-300 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
       >
-        <img
-          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Upscaled%20Image%20%2813%29-OQ2DiR3ElVsUg8kTvTL1kC5A3Q6maM.png"
-          alt=""
-          aria-hidden="true"
-          className="w-full h-full object-cover object-left-top"
-        />
-        {/* Fade left edge */}
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent" />
-        {/* Fade top edge */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-transparent" />
+        <div className="absolute bottom-0 right-0 w-[420px] h-[420px] rounded-full brand-gradient opacity-[0.10] blur-[110px]" />
       </div>
 
       {/* All text content sits on top */}
@@ -70,7 +61,7 @@ export function DevelopersSection() {
             <span className="w-8 h-px bg-foreground/30" />
             Créateur de campagnes
           </span>
-          <h2 className="text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9]">
+          <h2 className="text-6xl md:text-7xl lg:text-[128px] font-display font-extrabold tracking-tight leading-[0.9]">
             Créez une campagne.
             <br />
             <span className="text-muted-foreground">Touchez tout le monde.</span>

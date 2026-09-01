@@ -112,12 +112,12 @@ function GridBackground() {
           const size = 1 + wave * 2;
           ctx.beginPath();
           ctx.arc(x, y, size, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+          ctx.fillStyle = "rgba(20, 22, 40, 0.05)";
           ctx.fill();
         }
       }
       const pulseY = (time * 30) % height;
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+      ctx.strokeStyle = "rgba(46, 107, 255, 0.08)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, pulseY);
@@ -195,8 +195,8 @@ function DotGraph({
         ctx.beginPath();
         ctx.arc(x, dotY, r, 0, Math.PI * 2);
         ctx.fillStyle = color === "green"
-          ? `rgba(236, 168, 214, ${alpha})`
-          : `rgba(255, 255, 255, ${alpha})`;
+          ? `rgba(46, 107, 255, ${alpha})`
+          : `rgba(20, 22, 40, ${alpha * 0.7})`;
         ctx.fill();
       }
 
@@ -247,8 +247,8 @@ export function MetricsSection() {
         <div className="grid lg:grid-cols-12 gap-8 mb-20 lg:mb-32">
           <div className="lg:col-span-8 lg:col-start-1">
             <div className="flex items-center gap-4 mb-6">
-              <span className="flex items-center gap-2 px-3 py-1 bg-[#eca8d6]/10 text-[#eca8d6] text-xs font-mono">
-                <span className="w-2 h-2 rounded-full bg-[#eca8d6] animate-pulse" />
+              <span className="flex items-center gap-2 px-3 py-1 bg-[#2E6BFF]/10 text-[#2E6BFF] text-xs font-mono">
+                <span className="w-2 h-2 rounded-full bg-[#2E6BFF] animate-pulse" />
                 LIVE
               </span>
               <span className="text-sm font-mono text-muted-foreground">
@@ -256,7 +256,7 @@ export function MetricsSection() {
               </span>
             </div>
 
-            <h2 className={`text-6xl md:text-7xl lg:text-[140px] font-display tracking-tight leading-[0.95] transition-all duration-1000 ${
+            <h2 className={`text-6xl md:text-7xl lg:text-[140px] font-display font-extrabold tracking-tight leading-[0.95] transition-all duration-1000 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}>
               En temps réel
@@ -284,7 +284,7 @@ export function MetricsSection() {
           <div className={`lg:col-span-1 bg-foreground/[0.02] border border-foreground/10 p-10 lg:p-14 transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
           }`}>
-            <div className="text-4xl md:text-5xl lg:text-6xl font-display tracking-tight mb-4 whitespace-nowrap overflow-hidden">
+            <div className="text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight mb-4 whitespace-nowrap overflow-hidden">
               <AnimatedNumber end={metrics[0].value} suffix={metrics[0].suffix} prefix={metrics[0].prefix} />
             </div>
             <div className="mb-6">
@@ -317,7 +317,7 @@ export function MetricsSection() {
                   amplitude={index === 0 ? 0.45 : 0.6}
                 />
               </div>
-              <div className="text-3xl md:text-4xl lg:text-5xl font-display tracking-tight w-full">
+              <div className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight w-full">
                 <AnimatedNumber end={metric.value} suffix={metric.suffix} prefix={metric.prefix} />
               </div>
             </div>

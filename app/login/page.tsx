@@ -13,7 +13,7 @@ export default function LoginPage() {
             <span className="w-12 h-px bg-foreground/20" />
             Campagnes multi-canal
           </span>
-          <h2 className="font-display text-5xl tracking-tight text-foreground leading-[0.95] mb-6">
+          <h2 className="font-display font-bold text-5xl tracking-tight text-foreground leading-[0.95] mb-6">
             Communiquez avec des milliers de personnes depuis une seule plateforme.
           </h2>
           <p className="text-muted-foreground text-lg max-w-md leading-relaxed">
@@ -22,8 +22,8 @@ export default function LoginPage() {
         </div>
         <img
           src="/images/shield.png"
-          alt="Illustration Kineet"
-          className="absolute bottom-0 right-0 w-[65%] opacity-30 object-contain pointer-events-none"
+          alt="Illustration Chapnet"
+          className="absolute bottom-0 right-0 w-[65%] opacity-20 object-contain pointer-events-none"
         />
       </div>
     </main>

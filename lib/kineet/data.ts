@@ -2,9 +2,9 @@ import type { Campaign, Profile, Settings } from "./types";
 
 export const seedProfile: Profile = {
   name: "Alex Moreau",
-  company: "Kineet Demo SARL",
+  company: "Chapnet Demo SARL",
   phone: "+33 6 12 34 56 78",
-  email: "alex@kineetdemo.fr",
+  email: "alex@chapnetdemo.fr",
   photo: "",
 };
 
@@ -14,7 +14,7 @@ export const seedSettings: Settings = {
   campaignReports: true,
   darkMode: true,
   language: "Français",
-  emailSignature: "Envoyé avec Kineet — Alex Moreau, Kineet Demo SARL",
+  emailSignature: "Envoyé avec Chapnet — Alex Moreau, Chapnet Demo SARL",
 };
 
 export const seedCampaigns: Campaign[] = [
@@ -37,7 +37,7 @@ export const seedCampaigns: Campaign[] = [
     recipients: 12940,
     delivered: 12701,
     failed: 239,
-    subject: "Votre actualité de juin — Kineet Demo SARL",
+    subject: "Votre actualité de juin — Chapnet Demo SARL",
     message: "Bonjour {{prénom}}, voici toutes les nouveautés de ce mois.",
     createdAt: "2026-06-18T14:30:00.000Z",
   },
@@ -60,7 +60,7 @@ export const seedCampaigns: Campaign[] = [
     recipients: 3120,
     delivered: 3001,
     failed: 119,
-    subject: "Vous êtes invité : scaler avec Kineet",
+    subject: "Vous êtes invité : scaler avec Chapnet",
     message: "Bonjour {{prénom}}, rejoignez notre webinaire en direct ce jeudi.",
     createdAt: "2026-06-10T16:45:00.000Z",
   },

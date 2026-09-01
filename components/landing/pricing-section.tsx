@@ -80,7 +80,7 @@ export function PricingSection() {
               <span className="w-12 h-px bg-foreground/30" />
               Tarifs
             </span>
-            <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
+            <h2 className={`text-6xl md:text-7xl lg:text-[128px] font-display font-extrabold tracking-tight leading-[0.9] transition-all duration-1000 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}>
               Payez au
@@ -89,18 +89,14 @@ export function PricingSection() {
             </h2>
           </div>
           
-          <div className="lg:col-span-5 relative p-0 h-96 lg:h-auto">
-            {/* Whale image */}
-            <div className={`absolute inset-0 pointer-events-none transition-all duration-1000 delay-100 ${
+          <div className="lg:col-span-5 relative p-0 h-96 lg:h-auto hidden lg:block">
+            {/* Decorative brand blob */}
+            <div className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-all duration-1000 delay-100 ${
               isVisible ? "opacity-100" : "opacity-0"
             }`}>
-              <img
-                src="/images/whale.png"
-                alt="Organic whale"
-                className="w-full h-full object-contain object-center"
-              />
+              <div className="w-64 h-64 rounded-full brand-gradient opacity-20 blur-[70px]" />
+              <div className="absolute w-28 h-28 rounded-3xl brand-gradient" />
             </div>
-
           </div>
         </div>
 
@@ -110,17 +106,17 @@ export function PricingSection() {
             {plans.map((plan, index) => (
               <div
                 key={plan.name}
-                className={`relative bg-background border transition-all duration-700 ${
-                  plan.highlight 
-                    ? "border-foreground lg:-mx-2 lg:z-10 lg:scale-105" 
-                    : "border-foreground/10 lg:first:-mr-2 lg:last:-ml-2"
+                className={`relative bg-card rounded-2xl border transition-all duration-700 ${
+                  plan.highlight
+                    ? "border-[#2E6BFF]/40 lg:-mx-2 lg:z-10 lg:scale-105 shadow-xl shadow-[#2E6BFF]/10"
+                    : "border-border lg:first:-mr-2 lg:last:-ml-2"
                 } ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
                 {/* Popular badge */}
                 {plan.highlight && (
                   <div className="absolute -top-4 left-8 right-8 flex justify-center">
-                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background text-xs font-mono uppercase tracking-widest">
+                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full brand-gradient text-white text-xs font-mono uppercase tracking-widest">
                       <Zap className="w-3 h-3" />
                       Le plus populaire
                     </span>
@@ -129,11 +125,11 @@ export function PricingSection() {
 
                 <div className="p-8 lg:p-10">
                   {/* Plan header */}
-                  <div className="mb-8 pb-8 border-b border-foreground/10">
+                  <div className="mb-8 pb-8 border-b border-border">
                     <span className="font-mono text-xs text-muted-foreground">
                       {String(index + 1).padStart(2, "0")}
                     </span>
-                    <h3 className="text-2xl lg:text-3xl font-display mt-2">{plan.name}</h3>
+                    <h3 className="text-2xl lg:text-3xl font-display font-bold mt-2">{plan.name}</h3>
                     <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
                   </div>
 
@@ -141,13 +137,13 @@ export function PricingSection() {
                   <div className="mb-8">
                     {plan.price.monthly !== null ? (
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl lg:text-6xl font-display">
+                        <span className="text-5xl lg:text-6xl font-display font-bold">
                           ${isAnnual ? plan.price.annual : plan.price.monthly}
                         </span>
                         <span className="text-muted-foreground text-sm">/mois</span>
                       </div>
                     ) : (
-                      <span className="text-4xl font-display">Sur mesure</span>
+                      <span className="text-4xl font-display font-bold">Sur mesure</span>
                     )}
                     {plan.price.monthly !== null && plan.price.monthly > 0 && (
                       <p className="text-xs text-muted-foreground mt-2 font-mono">
@@ -160,7 +156,7 @@ export function PricingSection() {
                   <ul className="space-y-3 mb-10">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3">
-                        <Check className="w-4 h-4 text-[#eca8d6] mt-0.5 shrink-0" />
+                        <Check className="w-4 h-4 text-[#2E6BFF] mt-0.5 shrink-0" />
                         <span className="text-sm text-muted-foreground">{feature}</span>
                       </li>
                     ))}
@@ -169,10 +165,10 @@ export function PricingSection() {
                   {/* CTA */}
                   <a
                     href="/login"
-                    className={`w-full py-4 flex items-center justify-center gap-2 text-sm font-medium transition-all group ${
+                    className={`w-full py-4 rounded-full flex items-center justify-center gap-2 text-sm font-medium transition-all group ${
                       plan.highlight
-                        ? "bg-foreground text-background hover:bg-foreground/90"
-                        : "border border-foreground/20 text-foreground hover:border-foreground hover:bg-foreground/5"
+                        ? "brand-gradient text-white hover:opacity-90"
+                        : "border border-border text-foreground hover:border-foreground/40 hover:bg-accent"
                     }`}
                   >
                     {plan.cta}
@@ -190,15 +186,15 @@ export function PricingSection() {
         }`}>
           <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-[#eca8d6]" />
+              <Check className="w-4 h-4 text-[#2E6BFF]" />
               Contacts chiffrés
             </span>
             <span className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-[#eca8d6]" />
+              <Check className="w-4 h-4 text-[#2E6BFF]" />
               Historique complet
             </span>
             <span className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-[#eca8d6]" />
+              <Check className="w-4 h-4 text-[#2E6BFF]" />
               Envoi multi-canal
             </span>
           </div>

@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const testimonials = [
   {
-    quote: "Nous touchons 40 000 clients via WhatsApp et Email depuis un seul écran. Kineet a remplacé trois outils pour nous.",
+    quote: "Nous touchons 40 000 clients via WhatsApp et Email depuis un seul écran. Chapnet a remplacé trois outils pour nous.",
     author: "Sarah Chen",
     role: "Responsable croissance",
     company: "Meridian Retail",
@@ -103,7 +103,7 @@ export function TestimonialsSection() {
               <span className="w-12 h-px bg-background/20" />
               Témoignages
             </span>
-            <h2 className={`text-4xl lg:text-5xl font-display transition-all duration-1000 ${
+            <h2 className={`text-4xl lg:text-5xl font-display font-bold transition-all duration-1000 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}>
               Trusted by teams
@@ -140,7 +140,7 @@ export function TestimonialsSection() {
             <div className="relative">
               <blockquote 
                 key={activeIndex}
-                className="text-3xl lg:text-4xl xl:text-5xl font-display leading-[1.2] tracking-tight animate-fadeSlideIn"
+                className="text-3xl lg:text-4xl xl:text-5xl font-display font-semibold leading-[1.2] tracking-tight animate-fadeSlideIn"
               >
                 {activeTestimonial.quote}
               </blockquote>
@@ -169,7 +169,7 @@ export function TestimonialsSection() {
               key={`metric-${activeIndex}`}
               className="p-10 border border-background/20 bg-background/5 animate-fadeSlideIn"
             >
-              <span className="text-7xl lg:text-8xl font-display block mb-4">
+              <span className="text-7xl lg:text-8xl font-display font-extrabold block mb-4">
                 {activeTestimonial.metric.value}
               </span>
               <span className="text-lg text-background/60">

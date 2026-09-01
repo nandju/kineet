@@ -15,6 +15,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ChapnetLogo } from "@/components/landing/logo";
 import { cn } from "@/lib/utils";
 
 interface Step {
@@ -46,7 +47,7 @@ const SECTIONS: Section[] = [
     eyebrow: "Prise en main",
     title: "Créer votre compte",
     intro:
-      "Kineet s'appuie sur Supabase Auth pour l'authentification. Chaque compte dispose de son propre espace : campagnes, listes de diffusion et configurations de fournisseurs sont isolés par utilisateur.",
+      "Chapnet s'appuie sur Supabase Auth pour l'authentification. Chaque compte dispose de son propre espace : campagnes, listes de diffusion et configurations de fournisseurs sont isolés par utilisateur.",
     steps: [
       {
         title: "Inscription",
@@ -221,14 +222,13 @@ export function DocumentationPage() {
       <header className="border-b border-border">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
           <Link href="/" className="inline-flex items-center gap-2">
-            <span className="font-display text-2xl tracking-tight">KINEET</span>
-            <span className="font-mono text-xs mt-1 text-muted-foreground">TM</span>
+            <ChapnetLogo markClassName="w-6 h-6" wordmarkClassName="text-xl" />
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline">
               Accueil
             </Link>
-            <Button asChild size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90">
+            <Button asChild size="sm" className="rounded-full brand-gradient border-0 text-white hover:opacity-90">
               <Link href="/login">Se connecter</Link>
             </Button>
           </div>
@@ -242,11 +242,11 @@ export function DocumentationPage() {
             <span className="w-12 h-px bg-foreground/20" />
             Documentation
           </span>
-          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl tracking-tight leading-[0.95] mb-6 max-w-4xl">
+          <h1 className="font-display font-extrabold text-5xl md:text-6xl lg:text-7xl tracking-tight leading-[0.95] mb-6 max-w-4xl">
             Du compte au premier envoi.
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl leading-relaxed mb-8">
-            Le parcours complet pour utiliser Kineet : créer votre compte, configurer vos fournisseurs
+            Le parcours complet pour utiliser Chapnet : créer votre compte, configurer vos fournisseurs
             d'envoi Email et SMS, préparer vos listes de diffusion, puis envoyer vos messages — à un
             destinataire ou à des milliers.
           </p>
