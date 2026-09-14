@@ -6,6 +6,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  serverExternalPackages: ["@open-wa/wa-automate", "puppeteer", "sharp"],
 }
 
 export default nextConfig

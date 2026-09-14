@@ -13,7 +13,7 @@ import { Check, AlertTriangle, Mail, MessageSquare, Phone } from "lucide-react";
 import { useDashboard } from "@/lib/kineet/dashboard-context";
 import { notify } from "@/lib/kineet/notify";
 import type { Settings } from "@/lib/kineet/types";
-import { useProviders, useNotifications } from "@/lib/hooks";
+import { useProviders, useNotifications, useWhatsAppSession } from "@/lib/hooks";
 import type { EmailConfig, WhatsAppConfig, SmsConfig, ProviderType, ProviderTestResult } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { getProviderConfig, upsertProviderConfig } from "@/lib/supabase/repositories/provider-configs";
@@ -31,6 +31,7 @@ export function SettingsPanelV2() {
   const { settings, updateSettings } = useDashboard();
   const { configureWhatsApp, testWhatsAppConnection, isWhatsAppConfigured } = useProviders();
   const { configSaved, connectionSuccess, connectionFailed } = useNotifications();
+  const { state: waState, connect: connectWhatsAppSession, disconnect: disconnectWhatsAppSession } = useWhatsAppSession();
 
   const [supabase] = useState(() => createClient());
   const [userId, setUserId] = useState<string | null>(null);
@@ -368,6 +369,53 @@ export function SettingsPanelV2() {
                 <AlertTriangle className="w-4 h-4" />
                 <AlertDescription>
                   WhatsApp n'a pas encore de fournisseur réel branché — cette section reste simulée en attendant votre choix (Twilio, MessageBird, etc.).
+                </AlertDescription>
+              </Alert>
+            </div>
+
+            {/* WhatsApp Personnel (open-wa) */}
+            <div className="p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <MessageSquare className="w-5 h-5" />
+                  <h2 className="font-display text-xl">WhatsApp personnel (bêta)</h2>
+                </div>
+                {waState.status === "connected" && (
+                  <div className="flex items-center gap-2 text-green-400">
+                    <Check className="w-4 h-4" />
+                    <span className="text-sm">Connecté{waState.number ? ` — ${waState.number}` : ""}</span>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                Connectez directement votre compte WhatsApp (comme WhatsApp Web) pour importer vos groupes et contacts dans vos listes de diffusion.
+              </p>
+
+              {waState.status === "connected" ? (
+                <Button variant="outline" className="rounded-full" onClick={disconnectWhatsAppSession}>
+                  Déconnecter
+                </Button>
+              ) : waState.status === "qr" && waState.qr ? (
+                <div className="space-y-3">
+                  <p className="text-sm">Scannez ce QR code avec WhatsApp (Appareils liés) sur votre téléphone.</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={waState.qr} alt="QR code de connexion WhatsApp" className="w-48 h-48" />
+                </div>
+              ) : (
+                <Button
+                  className="rounded-full bg-foreground text-background"
+                  onClick={connectWhatsAppSession}
+                  disabled={waState.status === "connecting"}
+                >
+                  {waState.status === "connecting" ? "Connexion en cours..." : "Connecter mon WhatsApp"}
+                </Button>
+              )}
+
+              <Alert>
+                <AlertTriangle className="w-4 h-4" />
+                <AlertDescription>
+                  Mode bêta basé sur une automatisation non officielle de WhatsApp Web — à réserver à un usage personnel et à faible volume, distinct de l'envoi de campagnes en masse.
                 </AlertDescription>
               </Alert>
             </div>

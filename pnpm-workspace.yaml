@@ -1,2 +1,6 @@
 allowBuilds:
-  sharp: set this to true or false
+  '@open-wa/wa-automate': true
+  cloudflared: false
+  puppeteer: true
+  sharp: true
+  unix-dgram: false

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { FileSpreadsheet, Plus, Trash2, Upload, Users } from "lucide-react";
+import { FileSpreadsheet, MessageCircle, Plus, Trash2, Upload, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,9 +27,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { notify } from "@/lib/kineet/notify";
 import { generateId, parseSpreadsheetFile } from "@/lib/kineet/campaign-utils";
 import { createClient } from "@/lib/supabase/client";
+import { WhatsAppImportPicker, type WhatsAppRecipient } from "@/components/dashboard/whatsapp-import-picker";
 import {
   listDistributionLists,
   createDistributionList,
@@ -112,6 +114,12 @@ export function ListsPanel() {
     e.target.value = "";
   };
 
+  const handleWhatsAppImport = (recipients: WhatsAppRecipient[]) => {
+    if (recipients.length === 0) return;
+    setNewRecipients(recipients.map((r) => ({ id: generateId("wa"), lastName: r.lastName, firstName: r.firstName, contact: r.contact })));
+    notify.success("Import terminé", `${recipients.length} contact(s) importé(s) depuis WhatsApp.`);
+  };
+
   const createList = async () => {
     if (!userId) return;
     if (!newName.trim()) {
@@ -186,6 +194,12 @@ export function ListsPanel() {
     } catch {
       notify.error("Erreur", "Les contacts n'ont pas pu être ajoutés.");
     }
+  };
+
+  const handleDetailWhatsAppImport = (recipients: WhatsAppRecipient[]) => {
+    if (recipients.length === 0) return;
+    setAddDraft(recipients.map((r) => ({ id: generateId("wa"), lastName: r.lastName, firstName: r.firstName, contact: r.contact })));
+    notify.success("Import terminé", `${recipients.length} contact(s) prêt(s) à ajouter — cliquez "Ajouter".`);
   };
 
   const handleDetailImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,7 +301,11 @@ export function ListsPanel() {
               <TabsList>
                 <TabsTrigger value="manual">Saisie manuelle</TabsTrigger>
                 <TabsTrigger value="import">Import Excel</TabsTrigger>
+                <TabsTrigger value="whatsapp">Depuis WhatsApp</TabsTrigger>
               </TabsList>
+              <TabsContent value="whatsapp">
+                <WhatsAppImportPicker onImport={handleWhatsAppImport} />
+              </TabsContent>
               <TabsContent value="manual" className="space-y-3">
                 <ScrollArea className="max-h-64">
                   <div className="space-y-3 pr-3">
@@ -393,6 +411,16 @@ export function ListsPanel() {
                       <Upload className="w-4 h-4 mr-2" /> Importer
                     </Button>
                     <input ref={detailFileRef} type="file" accept=".xlsx,.csv,.xls" className="hidden" onChange={handleDetailImport} />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="rounded-full">
+                          <MessageCircle className="w-4 h-4 mr-2" /> Depuis WhatsApp
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[420px]" align="start">
+                        <WhatsAppImportPicker onImport={handleDetailWhatsAppImport} />
+                      </PopoverContent>
+                    </Popover>
                     <Button size="sm" className="rounded-full bg-foreground text-background ml-auto" onClick={addRecipientsToDetail}>
                       Ajouter à la liste
                     </Button>
