@@ -1,0 +1,17 @@
+{
+  "name": "chapnet-whatsapp-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone long-running service that hosts open-wa WhatsApp sessions (QR connect, groups, contacts) for Chapnet. Deployed separately from the main Next.js app since it needs a persistent process, not serverless functions.",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "dependencies": {
+    "@open-wa/wa-automate": "4.76.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}

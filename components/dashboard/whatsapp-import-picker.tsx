@@ -31,8 +31,14 @@ function splitName(name: string): { lastName: string; firstName: string } {
   return { lastName: parts[parts.length - 1], firstName: parts.slice(0, -1).join(" ") };
 }
 
-export function WhatsAppImportPicker({ onImport }: { onImport: (recipients: WhatsAppRecipient[]) => void }) {
-  const { state, connect } = useWhatsAppSession();
+export function WhatsAppImportPicker({
+  organizationId,
+  onImport,
+}: {
+  organizationId: string | null;
+  onImport: (recipients: WhatsAppRecipient[]) => void;
+}) {
+  const { state, connect } = useWhatsAppSession(organizationId);
 
   const [groups, setGroups] = useState<WhatsAppGroup[]>([]);
   const [contacts, setContacts] = useState<WhatsAppContact[]>([]);
@@ -43,12 +49,13 @@ export function WhatsAppImportPicker({ onImport }: { onImport: (recipients: What
   const [loadingGroupId, setLoadingGroupId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (state.status !== "connected") return;
+    if (state.status !== "connected" || !organizationId) return;
     let active = true;
     setLoadingLists(true);
+    const orgParam = `organizationId=${encodeURIComponent(organizationId)}`;
     Promise.all([
-      fetch("/api/whatsapp/groups").then((r) => r.json()),
-      fetch("/api/whatsapp/contacts").then((r) => r.json()),
+      fetch(`/api/whatsapp/groups?${orgParam}`).then((r) => r.json()),
+      fetch(`/api/whatsapp/contacts?${orgParam}`).then((r) => r.json()),
     ])
       .then(([groupsRes, contactsRes]) => {
         if (!active) return;
@@ -59,9 +66,10 @@ export function WhatsAppImportPicker({ onImport }: { onImport: (recipients: What
     return () => {
       active = false;
     };
-  }, [state.status]);
+  }, [state.status, organizationId]);
 
   const toggleGroup = async (group: WhatsAppGroup) => {
+    if (!organizationId) return;
     const next = new Set(selectedGroupIds);
     if (next.has(group.id)) {
       next.delete(group.id);
@@ -74,7 +82,9 @@ export function WhatsAppImportPicker({ onImport }: { onImport: (recipients: What
     if (!groupMembersCache[group.id]) {
       setLoadingGroupId(group.id);
       try {
-        const res = await fetch(`/api/whatsapp/groups/${encodeURIComponent(group.id)}/members`);
+        const res = await fetch(
+          `/api/whatsapp/groups/${encodeURIComponent(group.id)}/members?organizationId=${encodeURIComponent(organizationId)}`,
+        );
         const data = await res.json();
         if (data.success) {
           setGroupMembersCache((prev) => ({ ...prev, [group.id]: data.members }));

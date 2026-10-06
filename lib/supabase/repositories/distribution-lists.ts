@@ -23,12 +23,12 @@ export interface DistributionListRecipientInput {
 
 export async function listDistributionLists(
   supabase: SupabaseClient,
-  userId: string,
+  organizationId: string,
 ): Promise<DistributionList[]> {
   const { data, error } = await supabase
     .from("distribution_lists")
     .select("id, nom, description, created_at, distribution_list_recipients(count)")
-    .eq("user_id", userId)
+    .eq("organization_id", organizationId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -44,13 +44,14 @@ export async function listDistributionLists(
 
 export async function createDistributionList(
   supabase: SupabaseClient,
+  organizationId: string,
   userId: string,
   nom: string,
   description?: string,
 ): Promise<DistributionList> {
   const { data, error } = await supabase
     .from("distribution_lists")
-    .insert({ user_id: userId, nom, description: description || null })
+    .insert({ organization_id: organizationId, user_id: userId, nom, description: description || null })
     .select("id, nom, description, created_at")
     .single();
 

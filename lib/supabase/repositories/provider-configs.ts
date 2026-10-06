@@ -10,13 +10,13 @@ interface ProviderConfigRow {
 
 export async function getProviderConfig(
   supabase: SupabaseClient,
-  userId: string,
+  organizationId: string,
   type: ProviderType,
 ): Promise<AnyProviderConfig | null> {
   const { data, error } = await supabase
     .from("provider_configs")
     .select("type, status, config, last_checked")
-    .eq("user_id", userId)
+    .eq("organization_id", organizationId)
     .eq("type", type)
     .maybeSingle();
 
@@ -34,33 +34,33 @@ export async function getProviderConfig(
 
 export async function upsertProviderConfig(
   supabase: SupabaseClient,
-  userId: string,
+  organizationId: string,
   config: AnyProviderConfig,
 ): Promise<void> {
   const { type, status, lastChecked, ...rest } = config as AnyProviderConfig & Record<string, unknown>;
   const { error } = await supabase.from("provider_configs").upsert(
     {
-      user_id: userId,
+      organization_id: organizationId,
       type,
       status: status ?? "configured",
       config: rest,
       last_checked: new Date().toISOString(),
     },
-    { onConflict: "user_id,type" },
+    { onConflict: "organization_id,type" },
   );
   if (error) throw error;
 }
 
 export async function setProviderStatus(
   supabase: SupabaseClient,
-  userId: string,
+  organizationId: string,
   type: ProviderType,
   status: ProviderStatus,
 ): Promise<void> {
   const { error } = await supabase
     .from("provider_configs")
     .update({ status, last_checked: new Date().toISOString() })
-    .eq("user_id", userId)
+    .eq("organization_id", organizationId)
     .eq("type", type);
   if (error) throw error;
 }

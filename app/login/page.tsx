@@ -1,10 +1,13 @@
+import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/login-form";
 
 export default function LoginPage() {
   return (
     <main className="min-h-screen bg-background flex">
       <div className="flex-1 flex items-center justify-center px-6 lg:px-12 py-16">
-        <LoginForm />
+        <Suspense fallback={null}>
+          <LoginForm />
+        </Suspense>
       </div>
       <div className="hidden lg:flex flex-1 relative overflow-hidden border-l border-border">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-secondary to-background" />

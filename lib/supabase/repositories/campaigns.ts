@@ -48,11 +48,11 @@ function fromRow(row: CampaignRow): Campaign {
   };
 }
 
-export async function listCampaigns(supabase: SupabaseClient, userId: string): Promise<Campaign[]> {
+export async function listCampaigns(supabase: SupabaseClient, organizationId: string): Promise<Campaign[]> {
   const { data, error } = await supabase
     .from("campaigns")
     .select(SELECT_COLUMNS)
-    .eq("user_id", userId)
+    .eq("organization_id", organizationId)
     .order("date_creation", { ascending: false });
 
   if (error) throw error;
@@ -62,6 +62,7 @@ export async function listCampaigns(supabase: SupabaseClient, userId: string): P
 /** Inserts the campaign and returns the persisted row (its `id` is DB-generated, not `campaign.id`). */
 export async function insertCampaign(
   supabase: SupabaseClient,
+  organizationId: string,
   userId: string,
   campaign: Campaign,
 ): Promise<Campaign> {
@@ -74,6 +75,7 @@ export async function insertCampaign(
   const { data, error } = await supabase
     .from("campaigns")
     .insert({
+      organization_id: organizationId,
       user_id: userId,
       nom: campaign.name,
       canal: campaign.channel,

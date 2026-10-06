@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { listGroupMembers } from "@/lib/server/whatsapp/session-manager";
+import { isOrganizationMember } from "@/lib/supabase/repositories/organizations";
+import { whatsappService } from "@/lib/server/whatsapp/service-client";
 
-export const runtime = "nodejs";
-
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -14,15 +13,20 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 });
   }
 
+  const organizationId = new URL(request.url).searchParams.get("organizationId");
+  if (!organizationId || !(await isOrganizationMember(supabase, organizationId, user.id))) {
+    return NextResponse.json({ success: false, error: "Organisation invalide." }, { status: 403 });
+  }
+
   const { id } = await params;
 
   try {
-    const members = await listGroupMembers(user.id, decodeURIComponent(id));
-    return NextResponse.json({ success: true, members });
+    const { data, status } = await whatsappService.groupMembers(organizationId, decodeURIComponent(id));
+    return NextResponse.json(data, { status });
   } catch (err) {
     return NextResponse.json(
       { success: false, error: err instanceof Error ? err.message : "Erreur inconnue." },
-      { status: 400 },
+      { status: 503 },
     );
   }
 }

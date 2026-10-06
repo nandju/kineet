@@ -10,24 +10,28 @@ import {
   LogOut,
   Menu,
   Users,
+  UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DashboardProvider, useDashboard, type DashboardSection } from "@/lib/kineet/dashboard-context";
 import { ChapnetLogo } from "@/components/landing/logo";
+import { OrgSwitcher } from "./org-switcher";
 import { HomePanel } from "./home-panel";
 import { NewCampaignPanel } from "./new-campaign-panel";
 import { ListsPanel } from "./lists-panel";
 import { HistoryPanel } from "./history-panel";
 import { ProfilePanel } from "./profile-panel";
 import { SettingsPanelV2 } from "./settings-panel-v2";
+import { MembersPanel } from "./members-panel";
 
 const NAV: { id: DashboardSection; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Accueil", icon: Home },
   { id: "campaign", label: "Nouvelle campagne", icon: PlusCircle },
   { id: "lists", label: "Listes de diffusion", icon: Users },
   { id: "history", label: "Historique", icon: History },
+  { id: "members", label: "Membres", icon: UserCog },
   { id: "profile", label: "Profil", icon: User },
   { id: "settings", label: "Paramètres", icon: Settings },
 ];
@@ -37,10 +41,11 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <nav className="flex flex-col h-full">
-      <div className="p-6 border-b border-sidebar-border">
+      <div className="p-6 border-b border-sidebar-border space-y-4">
         <a href="/" className="inline-flex items-center gap-2">
           <ChapnetLogo markClassName="w-6 h-6" wordmarkClassName="text-lg" />
         </a>
+        <OrgSwitcher />
       </div>
       <div className="flex-1 p-4 space-y-1">
         {NAV.map(({ id, label, icon: Icon }) => (
@@ -83,6 +88,7 @@ function DashboardContent() {
     campaign: <NewCampaignPanel />,
     lists: <ListsPanel />,
     history: <HistoryPanel />,
+    members: <MembersPanel />,
     profile: <ProfilePanel />,
     settings: <SettingsPanelV2 />,
   };
@@ -113,9 +119,9 @@ function DashboardContent() {
   );
 }
 
-export function DashboardApp() {
+export function DashboardApp({ orgSlug }: { orgSlug: string }) {
   return (
-    <DashboardProvider>
+    <DashboardProvider orgSlug={orgSlug}>
       <DashboardContent />
     </DashboardProvider>
   );

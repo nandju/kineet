@@ -18,23 +18,22 @@ import type { EmailConfig, WhatsAppConfig, SmsConfig, ProviderType, ProviderTest
 import { createClient } from "@/lib/supabase/client";
 import { getProviderConfig, upsertProviderConfig } from "@/lib/supabase/repositories/provider-configs";
 
-async function testProvider(type: ProviderType): Promise<ProviderTestResult> {
+async function testProvider(type: ProviderType, organizationId: string): Promise<ProviderTestResult> {
   const res = await fetch("/api/providers/test", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ type }),
+    body: JSON.stringify({ type, organizationId }),
   });
   return res.json();
 }
 
 export function SettingsPanelV2() {
-  const { settings, updateSettings } = useDashboard();
+  const { settings, updateSettings, organizationId } = useDashboard();
   const { configureWhatsApp, testWhatsAppConnection, isWhatsAppConfigured } = useProviders();
   const { configSaved, connectionSuccess, connectionFailed } = useNotifications();
-  const { state: waState, connect: connectWhatsAppSession, disconnect: disconnectWhatsAppSession } = useWhatsAppSession();
+  const { state: waState, connect: connectWhatsAppSession, disconnect: disconnectWhatsAppSession } = useWhatsAppSession(organizationId);
 
   const [supabase] = useState(() => createClient());
-  const [userId, setUserId] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [emailConnected, setEmailConnected] = useState(false);
   const [smsConnected, setSmsConnected] = useState(false);
@@ -73,18 +72,15 @@ export function SettingsPanelV2() {
     androidDeviceId: '',
   });
 
-  // Load the signed-in user's stored provider configs from Supabase
+  // Load the organization's stored provider configs from Supabase
   useEffect(() => {
+    if (!organizationId) return;
     let active = true;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !active) return;
-      setUserId(user.id);
-
       const [email, whatsapp, sms] = await Promise.all([
-        getProviderConfig(supabase, user.id, 'email'),
-        getProviderConfig(supabase, user.id, 'whatsapp'),
-        getProviderConfig(supabase, user.id, 'sms'),
+        getProviderConfig(supabase, organizationId, 'email'),
+        getProviderConfig(supabase, organizationId, 'whatsapp'),
+        getProviderConfig(supabase, organizationId, 'sms'),
       ]);
       if (!active) return;
 
@@ -103,7 +99,7 @@ export function SettingsPanelV2() {
     })();
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase]);
+  }, [supabase, organizationId]);
 
   const patch = (partial: Partial<Settings>) => {
     const next = { ...settings, ...partial };
@@ -112,13 +108,13 @@ export function SettingsPanelV2() {
   };
 
   const saveEmailConfig = async () => {
-    if (!userId) return;
+    if (!organizationId) return;
     setIsTesting(true);
     try {
-      await upsertProviderConfig(supabase, userId, emailForm);
+      await upsertProviderConfig(supabase, organizationId, emailForm);
       configSaved('Email');
 
-      const result = await testProvider('email');
+      const result = await testProvider('email', organizationId);
       setEmailConnected(result.success);
       if (result.success) connectionSuccess('Email SMTP');
       else connectionFailed('Email SMTP', result.message);
@@ -131,8 +127,8 @@ export function SettingsPanelV2() {
 
   const saveWhatsAppConfig = async () => {
     configureWhatsApp(whatsappForm);
-    if (userId) {
-      upsertProviderConfig(supabase, userId, whatsappForm).catch(() => {
+    if (organizationId) {
+      upsertProviderConfig(supabase, organizationId, whatsappForm).catch(() => {
         notify.error("Erreur", "La configuration WhatsApp n'a pas pu être enregistrée.");
       });
     }
@@ -146,13 +142,13 @@ export function SettingsPanelV2() {
   };
 
   const saveSmsConfig = async () => {
-    if (!userId) return;
+    if (!organizationId) return;
     setIsTesting(true);
     try {
-      await upsertProviderConfig(supabase, userId, smsForm);
+      await upsertProviderConfig(supabase, organizationId, smsForm);
       configSaved('SMS');
 
-      const result = await testProvider('sms');
+      const result = await testProvider('sms', organizationId);
       setSmsConnected(result.success);
       if (result.success) connectionSuccess('SMS (TextBee)');
       else connectionFailed('SMS (TextBee)', result.message);

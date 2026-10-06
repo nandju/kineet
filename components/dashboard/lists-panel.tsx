@@ -31,6 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { notify } from "@/lib/kineet/notify";
 import { generateId, parseSpreadsheetFile } from "@/lib/kineet/campaign-utils";
 import { createClient } from "@/lib/supabase/client";
+import { useDashboard } from "@/lib/kineet/dashboard-context";
 import { WhatsAppImportPicker, type WhatsAppRecipient } from "@/components/dashboard/whatsapp-import-picker";
 import {
   listDistributionLists,
@@ -50,8 +51,8 @@ function emptyDraft(): DraftRecipient {
 }
 
 export function ListsPanel() {
+  const { userId, organizationId } = useDashboard();
   const [supabase] = useState(() => createClient());
-  const [userId, setUserId] = useState<string | null>(null);
   const [lists, setLists] = useState<DistributionList[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,10 +69,10 @@ export function ListsPanel() {
   const [addDraft, setAddDraft] = useState<DraftRecipient[]>([emptyDraft()]);
   const detailFileRef = useRef<HTMLInputElement>(null);
 
-  const refreshLists = async (uid: string) => {
+  const refreshLists = async (orgId: string) => {
     setLoading(true);
     try {
-      setLists(await listDistributionLists(supabase, uid));
+      setLists(await listDistributionLists(supabase, orgId));
     } catch {
       notify.error("Erreur", "Impossible de charger les listes de diffusion.");
     } finally {
@@ -80,16 +81,10 @@ export function ListsPanel() {
   };
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !active) return;
-      setUserId(user.id);
-      await refreshLists(user.id);
-    })();
-    return () => { active = false; };
+    if (!organizationId) return;
+    refreshLists(organizationId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase]);
+  }, [organizationId]);
 
   const resetCreateForm = () => {
     setNewName("");
@@ -121,7 +116,7 @@ export function ListsPanel() {
   };
 
   const createList = async () => {
-    if (!userId) return;
+    if (!userId || !organizationId) return;
     if (!newName.trim()) {
       notify.error("Nom requis", "Donnez un nom à votre liste de diffusion.");
       return;
@@ -129,7 +124,7 @@ export function ListsPanel() {
     const validDrafts = newRecipients.filter((r) => r.lastName.trim() && r.firstName.trim() && r.contact.trim());
     setCreating(true);
     try {
-      const list = await createDistributionList(supabase, userId, newName.trim(), newDescription.trim() || undefined);
+      const list = await createDistributionList(supabase, organizationId, userId, newName.trim(), newDescription.trim() || undefined);
       if (validDrafts.length > 0) {
         await addDistributionListRecipients(
           supabase,
@@ -140,7 +135,7 @@ export function ListsPanel() {
       notify.success("Liste créée", `"${list.nom}" a été créée avec ${validDrafts.length} contact(s).`);
       setCreateOpen(false);
       resetCreateForm();
-      await refreshLists(userId);
+      await refreshLists(organizationId);
     } catch {
       notify.error("Erreur", "La liste n'a pas pu être créée.");
     } finally {
@@ -304,7 +299,7 @@ export function ListsPanel() {
                 <TabsTrigger value="whatsapp">Depuis WhatsApp</TabsTrigger>
               </TabsList>
               <TabsContent value="whatsapp">
-                <WhatsAppImportPicker onImport={handleWhatsAppImport} />
+                <WhatsAppImportPicker organizationId={organizationId} onImport={handleWhatsAppImport} />
               </TabsContent>
               <TabsContent value="manual" className="space-y-3">
                 <ScrollArea className="max-h-64">
@@ -418,7 +413,7 @@ export function ListsPanel() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[420px]" align="start">
-                        <WhatsAppImportPicker onImport={handleDetailWhatsAppImport} />
+                        <WhatsAppImportPicker organizationId={organizationId} onImport={handleDetailWhatsAppImport} />
                       </PopoverContent>
                     </Popover>
                     <Button size="sm" className="rounded-full bg-foreground text-background ml-auto" onClick={addRecipientsToDetail}>

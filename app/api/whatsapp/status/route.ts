@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getSession } from "@/lib/server/whatsapp/session-manager";
+import { isOrganizationMember } from "@/lib/supabase/repositories/organizations";
+import { whatsappService } from "@/lib/server/whatsapp/service-client";
 
-export const runtime = "nodejs";
-
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -14,6 +13,18 @@ export async function GET() {
     return NextResponse.json({ success: false, error: "Non authentifié." }, { status: 401 });
   }
 
-  const state = getSession(user.id);
-  return NextResponse.json({ success: true, ...state });
+  const organizationId = new URL(request.url).searchParams.get("organizationId");
+  if (!organizationId || !(await isOrganizationMember(supabase, organizationId, user.id))) {
+    return NextResponse.json({ success: false, error: "Organisation invalide." }, { status: 403 });
+  }
+
+  try {
+    const { data, status } = await whatsappService.status(organizationId);
+    return NextResponse.json(data, { status });
+  } catch (err) {
+    return NextResponse.json(
+      { success: false, error: err instanceof Error ? err.message : "Erreur inconnue." },
+      { status: 503 },
+    );
+  }
 }

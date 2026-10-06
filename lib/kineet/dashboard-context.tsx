@@ -9,6 +9,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import type { Campaign, Profile, Settings } from "./types";
 import { initializeSaaSArchitecture } from "../integration/dashboard-integration";
 import { useProviders } from "../hooks";
@@ -16,6 +17,12 @@ import { createClient } from "../supabase/client";
 import { listCampaigns, insertCampaign, updateCampaignRow, deleteCampaignRow } from "../supabase/repositories/campaigns";
 import { getProfile, upsertProfile } from "../supabase/repositories/profile";
 import { getSettingsRow, upsertSettings, toSettings } from "../supabase/repositories/settings";
+import {
+  listMyOrganizations,
+  getOrganizationBySlug,
+  createOrganization as createOrganizationRow,
+  type Organization,
+} from "../supabase/repositories/organizations";
 import { notify } from "./notify";
 
 export type DashboardSection =
@@ -24,7 +31,8 @@ export type DashboardSection =
   | "lists"
   | "history"
   | "profile"
-  | "settings";
+  | "settings"
+  | "members";
 
 const EMPTY_PROFILE: Profile = { name: "", company: "", phone: "", email: "", photo: "" };
 
@@ -40,6 +48,15 @@ interface DashboardContextValue {
   settings: Settings;
   updateSettings: (settings: Settings) => void;
   logout: () => void;
+  // Organisation active + organisations de l'utilisateur
+  userId: string | null;
+  organizationId: string | null;
+  organizationSlug: string;
+  organizationName: string;
+  organizationRole: Organization["role"] | null;
+  organizations: Organization[];
+  switchOrganization: (slug: string) => void;
+  createOrganization: (name: string) => Promise<void>;
   // SaaS architecture managers
   campaignManager: any;
   queueManager: any;
@@ -47,12 +64,15 @@ interface DashboardContextValue {
 
 const DashboardContext = createContext<DashboardContextValue | null>(null);
 
-export function DashboardProvider({ children }: { children: ReactNode }) {
+export function DashboardProvider({ children, orgSlug }: { children: ReactNode; orgSlug: string }) {
+  const router = useRouter();
   const [section, setSection] = useState<DashboardSection>("home");
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [profile, setProfile] = useState<Profile>(EMPTY_PROFILE);
   const [settings, setSettings] = useState<Settings>(() => toSettings(null));
   const [userId, setUserId] = useState<string | null>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -60,7 +80,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const { queueManager, campaignManager } = useMemo(() => initializeSaaSArchitecture(), []);
   const { getProvider } = useProviders();
 
-  // Load the signed-in user's data from Supabase on mount
+  // Load the signed-in user's data + active organization from Supabase on mount
   useEffect(() => {
     let active = true;
 
@@ -73,15 +93,28 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setUserId(user.id);
 
       try {
-        const [fetchedCampaigns, fetchedProfile, fetchedSettingsRow] = await Promise.all([
-          listCampaigns(supabase, user.id),
+        const [org, myOrgs, fetchedProfile, fetchedSettingsRow] = await Promise.all([
+          getOrganizationBySlug(supabase, orgSlug),
+          listMyOrganizations(supabase, user.id),
           getProfile(supabase, user),
           getSettingsRow(supabase, user.id),
         ]);
         if (!active) return;
-        setCampaigns(fetchedCampaigns);
+
+        if (!org) {
+          notify.error("Organisation introuvable", "Vous n'êtes pas membre de cette organisation.");
+          router.replace("/dashboard");
+          return;
+        }
+
+        setOrganization(org);
+        setOrganizations(myOrgs);
         setProfile(fetchedProfile);
         setSettings(toSettings(fetchedSettingsRow));
+
+        const fetchedCampaigns = await listCampaigns(supabase, org.id);
+        if (!active) return;
+        setCampaigns(fetchedCampaigns);
       } catch {
         if (active) notify.error("Erreur de chargement", "Impossible de charger vos données depuis Supabase.");
       }
@@ -90,7 +123,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [supabase]);
+  }, [supabase, orgSlug, router]);
 
   // Set up queue provider when campaigns start
   useEffect(() => {
@@ -106,9 +139,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const addCampaign = useCallback(
     async (campaign: Campaign): Promise<Campaign> => {
       setCampaigns((prev) => [campaign, ...prev]);
-      if (!userId) return campaign;
+      if (!userId || !organization) return campaign;
       try {
-        const saved = await insertCampaign(supabase, userId, campaign);
+        const saved = await insertCampaign(supabase, organization.id, userId, campaign);
         setCampaigns((prev) => prev.map((c) => (c.id === campaign.id ? saved : c)));
         return saved;
       } catch {
@@ -116,7 +149,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         return campaign;
       }
     },
-    [supabase, userId],
+    [supabase, userId, organization],
   );
 
   const updateCampaign = useCallback(
@@ -167,6 +200,27 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     });
   }, [supabase]);
 
+  const switchOrganization = useCallback(
+    (slug: string) => {
+      router.push(`/org/${slug}/dashboard`);
+    },
+    [router],
+  );
+
+  const createOrganization = useCallback(
+    async (name: string) => {
+      if (!userId) return;
+      try {
+        const org = await createOrganizationRow(supabase, userId, name);
+        notify.success("Organisation créée", `"${org.name}" est prête.`);
+        router.push(`/org/${org.slug}/dashboard`);
+      } catch {
+        notify.error("Erreur", "L'organisation n'a pas pu être créée.");
+      }
+    },
+    [supabase, userId, router],
+  );
+
   const value = useMemo(
     () => ({
       section,
@@ -180,11 +234,38 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       settings,
       updateSettings,
       logout,
+      userId,
+      organizationId: organization?.id ?? null,
+      organizationSlug: organization?.slug ?? orgSlug,
+      organizationName: organization?.name ?? "",
+      organizationRole: organization?.role ?? null,
+      organizations,
+      switchOrganization,
+      createOrganization,
       // Expose SaaS architecture for advanced usage
       campaignManager,
       queueManager,
     }),
-    [section, campaigns, addCampaign, updateCampaign, deleteCampaign, profile, updateProfile, settings, updateSettings, logout, campaignManager, queueManager],
+    [
+      section,
+      campaigns,
+      addCampaign,
+      updateCampaign,
+      deleteCampaign,
+      profile,
+      updateProfile,
+      settings,
+      updateSettings,
+      logout,
+      userId,
+      organization,
+      orgSlug,
+      organizations,
+      switchOrganization,
+      createOrganization,
+      campaignManager,
+      queueManager,
+    ],
   );
 
   return (

@@ -22,3 +22,7 @@ tsconfig.tsbuildinfo
 **.node-persist**
 **_IGNORE_**
 # end managed
+
+.vercel
+.env*
+ACCESS.md

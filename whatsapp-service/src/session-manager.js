@@ -1,60 +1,34 @@
-import { create, ev, STATE, type Client, type GroupChatId } from "@open-wa/wa-automate";
+const { create, ev, STATE } = require("@open-wa/wa-automate");
 
-export type WhatsAppSessionStatus = "connecting" | "qr" | "connected" | "disconnected" | "error";
+/** @type {Map<string, { status: string, qr?: string, number?: string, client?: any, error?: string }>} */
+const sessions = new Map();
 
-interface SessionState {
-  status: WhatsAppSessionStatus;
-  qr?: string;
-  number?: string;
-  client?: Client;
-  error?: string;
-}
+// `ev` is shared across every open-wa session in this process; events are
+// namespaced as `qr.<sessionId>` (sessionId = our userId).
+ev.on("qr.**", (qrDataUrl, sessionId) => {
+  const session = sessions.get(sessionId);
+  if (session && session.status !== "connected") {
+    session.qr = qrDataUrl;
+    session.status = "qr";
+  }
+});
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __waSessions: Map<string, SessionState> | undefined;
-  // eslint-disable-next-line no-var
-  var __waQrListenerRegistered: boolean | undefined;
-}
-
-const sessions = globalThis.__waSessions ?? (globalThis.__waSessions = new Map<string, SessionState>());
-
-// Registered once per process: `ev` is a shared emitter across every open-wa
-// session, events are namespaced as `qr.<sessionId>` (sessionId = our userId).
-if (!globalThis.__waQrListenerRegistered) {
-  globalThis.__waQrListenerRegistered = true;
-  ev.on("qr.**", (qrDataUrl: string, sessionId: string) => {
-    const session = sessions.get(sessionId);
-    if (session && session.status !== "connected") {
-      session.qr = qrDataUrl;
-      session.status = "qr";
-    }
-  });
-}
-
-export interface PublicSessionState {
-  status: WhatsAppSessionStatus;
-  qr?: string;
-  number?: string;
-  error?: string;
-}
-
-function toPublic(state: SessionState): PublicSessionState {
+function toPublic(state) {
   return { status: state.status, qr: state.qr, number: state.number, error: state.error };
 }
 
-export function getSession(userId: string): PublicSessionState {
+function getSession(userId) {
   const session = sessions.get(userId);
   return session ? toPublic(session) : { status: "disconnected" };
 }
 
-export async function connectSession(userId: string): Promise<PublicSessionState> {
+async function connectSession(userId) {
   const existing = sessions.get(userId);
   if (existing && existing.status !== "disconnected" && existing.status !== "error") {
     return toPublic(existing);
   }
 
-  const state: SessionState = { status: "connecting" };
+  const state = { status: "connecting" };
   sessions.set(userId, state);
 
   create({
@@ -89,9 +63,9 @@ export async function connectSession(userId: string): Promise<PublicSessionState
   return toPublic(state);
 }
 
-export async function disconnectSession(userId: string): Promise<void> {
+async function disconnectSession(userId) {
   const session = sessions.get(userId);
-  if (session?.client) {
+  if (session && session.client) {
     try {
       await session.client.kill();
     } catch {
@@ -101,27 +75,17 @@ export async function disconnectSession(userId: string): Promise<void> {
   sessions.delete(userId);
 }
 
-function requireClient(userId: string): Client {
+function requireClient(userId) {
   const session = sessions.get(userId);
   if (!session || session.status !== "connected" || !session.client) {
-    throw new Error("WhatsApp non connecté.");
+    const err = new Error("WhatsApp non connecté.");
+    err.statusCode = 409;
+    throw err;
   }
   return session.client;
 }
 
-export interface WhatsAppGroupSummary {
-  id: string;
-  name: string;
-  participantCount: number;
-}
-
-export interface WhatsAppContactSummary {
-  id: string;
-  name: string;
-  number: string;
-}
-
-function toContactSummary(contact: { id: string; name?: string; pushname?: string; formattedName?: string }): WhatsAppContactSummary {
+function toContactSummary(contact) {
   const number = typeof contact.id === "string" ? contact.id.split("@")[0] : "";
   return {
     id: contact.id,
@@ -130,7 +94,7 @@ function toContactSummary(contact: { id: string; name?: string; pushname?: strin
   };
 }
 
-export async function listGroups(userId: string): Promise<WhatsAppGroupSummary[]> {
+async function listGroups(userId) {
   const client = requireClient(userId);
   const chats = await client.getAllGroups();
   return chats
@@ -142,13 +106,13 @@ export async function listGroups(userId: string): Promise<WhatsAppGroupSummary[]
     }));
 }
 
-export async function listGroupMembers(userId: string, groupId: string): Promise<WhatsAppContactSummary[]> {
+async function listGroupMembers(userId, groupId) {
   const client = requireClient(userId);
-  const members = await client.getGroupMembers(groupId as GroupChatId);
+  const members = await client.getGroupMembers(groupId);
   return members.map(toContactSummary).filter((c) => c.number);
 }
 
-export async function listContacts(userId: string): Promise<WhatsAppContactSummary[]> {
+async function listContacts(userId) {
   const client = requireClient(userId);
   const contacts = await client.getAllContacts();
   return contacts
@@ -156,3 +120,12 @@ export async function listContacts(userId: string): Promise<WhatsAppContactSumma
     .map(toContactSummary)
     .filter((c) => c.number);
 }
+
+module.exports = {
+  getSession,
+  connectSession,
+  disconnectSession,
+  listGroups,
+  listGroupMembers,
+  listContacts,
+};

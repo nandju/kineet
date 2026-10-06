@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getProviderConfig, setProviderStatus } from "@/lib/supabase/repositories/provider-configs";
+import { isOrganizationMember } from "@/lib/supabase/repositories/organizations";
 import { testSmtpConnection } from "@/lib/server/providers/smtp";
 import { testTextBeeConfig } from "@/lib/server/providers/textbee";
 import type { EmailConfig, SmsConfig, ProviderType } from "@/lib/types";
@@ -15,9 +16,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: "Non authentifié." }, { status: 401 });
   }
 
-  const { type } = (await request.json()) as { type: ProviderType };
+  const { type, organizationId } = (await request.json()) as { type: ProviderType; organizationId: string };
 
-  const config = await getProviderConfig(supabase, user.id, type);
+  if (!organizationId || !(await isOrganizationMember(supabase, organizationId, user.id))) {
+    return NextResponse.json({ success: false, message: "Organisation invalide." }, { status: 403 });
+  }
+
+  const config = await getProviderConfig(supabase, organizationId, type);
   if (!config) {
     return NextResponse.json({ success: false, message: "Aucune configuration trouvée." }, { status: 404 });
   }
@@ -29,7 +34,7 @@ export async function POST(request: Request) {
         ? await testTextBeeConfig(config as SmsConfig)
         : { success: false, message: "Ce fournisseur n'a pas encore d'intégration réelle." };
 
-  await setProviderStatus(supabase, user.id, type, result.success ? "connected" : "error");
+  await setProviderStatus(supabase, organizationId, type, result.success ? "connected" : "error");
 
   return NextResponse.json(result);
 }

@@ -87,7 +87,7 @@ async function runWithConcurrency<T>(items: T[], limit: number, worker: (item: T
 }
 
 export function NewCampaignPanel() {
-  const { addCampaign, setSection } = useDashboard();
+  const { addCampaign, setSection, organizationId } = useDashboard();
   const [supabase] = useState(() => createClient());
 
   const [view, setView] = useState<WizardView>("form");
@@ -117,14 +117,13 @@ export function NewCampaignPanel() {
   const [sendProgress, setSendProgress] = useState({ sent: 0, pending: 0, failed: 0, total: 0, percent: 0, eta: 0 });
 
   useEffect(() => {
+    if (!organizationId) return;
     let active = true;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !active) return;
       const [email, sms, lists] = await Promise.all([
-        getProviderConfig(supabase, user.id, "email"),
-        getProviderConfig(supabase, user.id, "sms"),
-        listDistributionLists(supabase, user.id),
+        getProviderConfig(supabase, organizationId, "email"),
+        getProviderConfig(supabase, organizationId, "sms"),
+        listDistributionLists(supabase, organizationId),
       ]);
       if (!active) return;
       setEmailConfig(email as EmailConfig | null);
@@ -133,7 +132,7 @@ export function NewCampaignPanel() {
       setLoadingProviders(false);
     })();
     return () => { active = false; };
-  }, [supabase]);
+  }, [supabase, organizationId]);
 
   const validRecipients = useMemo(() => recipients.filter((r) => r.valid), [recipients]);
   const previewRecipient = validRecipients[0] ?? {
@@ -361,6 +360,7 @@ export function NewCampaignPanel() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             channel,
+            organizationId,
             to: recipient.contact,
             subject: channel === "email" ? replaceVariables(subject, recipient) : undefined,
             message: replaceVariables(message, recipient),
