@@ -35,12 +35,14 @@ export async function getProviderConfig(
 export async function upsertProviderConfig(
   supabase: SupabaseClient,
   organizationId: string,
+  userId: string,
   config: AnyProviderConfig,
 ): Promise<void> {
   const { type, status, lastChecked, ...rest } = config as AnyProviderConfig & Record<string, unknown>;
   const { error } = await supabase.from("provider_configs").upsert(
     {
       organization_id: organizationId,
+      user_id: userId,
       type,
       status: status ?? "configured",
       config: rest,

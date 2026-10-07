@@ -50,7 +50,7 @@ export async function adminGetOrganization(admin: SupabaseClient, organizationId
   const [{ data: members }, { data: providers }, { data: campaigns }] = await Promise.all([
     admin
       .from("organization_members")
-      .select("user_id, role, created_at, profiles(full_name)")
+      .select("user_id, role, created_at")
       .eq("organization_id", organizationId)
       .order("created_at", { ascending: true }),
     admin
@@ -65,6 +65,14 @@ export async function adminGetOrganization(admin: SupabaseClient, organizationId
       .limit(20),
   ]);
 
+  // No FK between organization_members and profiles for PostgREST to embed — fetch and merge separately.
+  const memberUserIds = (members ?? []).map((m) => m.user_id);
+  const { data: memberProfiles } =
+    memberUserIds.length > 0
+      ? await admin.from("profiles").select("id, full_name").in("id", memberUserIds)
+      : { data: [] as { id: string; full_name: string | null }[] };
+  const nameById = new Map((memberProfiles ?? []).map((p) => [p.id, p.full_name ?? ""]));
+
   return {
     id: org.id,
     name: org.name,
@@ -74,7 +82,7 @@ export async function adminGetOrganization(admin: SupabaseClient, organizationId
     members: (members ?? []).map((m: any) => ({
       userId: m.user_id,
       role: m.role,
-      name: m.profiles?.full_name ?? "",
+      name: nameById.get(m.user_id) ?? "",
       createdAt: m.created_at,
     })),
     providers: (providers ?? []).map((p: any) => ({ type: p.type, status: p.status, lastChecked: p.last_checked })),

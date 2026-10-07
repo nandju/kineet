@@ -28,7 +28,7 @@ async function testProvider(type: ProviderType, organizationId: string): Promise
 }
 
 export function SettingsPanelV2() {
-  const { settings, updateSettings, organizationId } = useDashboard();
+  const { settings, updateSettings, organizationId, userId } = useDashboard();
   const { configureWhatsApp, testWhatsAppConnection, isWhatsAppConfigured } = useProviders();
   const { configSaved, connectionSuccess, connectionFailed } = useNotifications();
   const { state: waState, connect: connectWhatsAppSession, disconnect: disconnectWhatsAppSession } = useWhatsAppSession(organizationId);
@@ -108,10 +108,10 @@ export function SettingsPanelV2() {
   };
 
   const saveEmailConfig = async () => {
-    if (!organizationId) return;
+    if (!organizationId || !userId) return;
     setIsTesting(true);
     try {
-      await upsertProviderConfig(supabase, organizationId, emailForm);
+      await upsertProviderConfig(supabase, organizationId, userId, emailForm);
       configSaved('Email');
 
       const result = await testProvider('email', organizationId);
@@ -127,8 +127,8 @@ export function SettingsPanelV2() {
 
   const saveWhatsAppConfig = async () => {
     configureWhatsApp(whatsappForm);
-    if (organizationId) {
-      upsertProviderConfig(supabase, organizationId, whatsappForm).catch(() => {
+    if (organizationId && userId) {
+      upsertProviderConfig(supabase, organizationId, userId, whatsappForm).catch(() => {
         notify.error("Erreur", "La configuration WhatsApp n'a pas pu être enregistrée.");
       });
     }
@@ -142,10 +142,10 @@ export function SettingsPanelV2() {
   };
 
   const saveSmsConfig = async () => {
-    if (!organizationId) return;
+    if (!organizationId || !userId) return;
     setIsTesting(true);
     try {
-      await upsertProviderConfig(supabase, organizationId, smsForm);
+      await upsertProviderConfig(supabase, organizationId, userId, smsForm);
       configSaved('SMS');
 
       const result = await testProvider('sms', organizationId);

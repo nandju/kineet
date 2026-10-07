@@ -122,21 +122,20 @@ export async function createOrganization(
   return data.organization as Organization;
 }
 
-export async function listMembers(supabase: SupabaseClient, organizationId: string): Promise<OrganizationMember[]> {
-  const { data, error } = await supabase
-    .from("organization_members")
-    .select("user_id, role, created_at, profiles(full_name)")
-    .eq("organization_id", organizationId)
-    .order("created_at", { ascending: true });
-
-  if (error) throw error;
-
-  return (data ?? []).map((row: any) => ({
-    userId: row.user_id,
-    role: row.role as OrganizationRole,
-    name: row.profiles?.full_name ?? "",
+/**
+ * Goes through /api/organizations/[id]/members (service-role) rather than
+ * querying directly: there's no FK between organization_members and
+ * profiles for PostgREST to embed, and profiles' own RLS only allows
+ * reading your own row anyway — seeing teammates' names needs the
+ * service-role client, gated server-side on actually being a member.
+ */
+export async function listMembers(_supabase: SupabaseClient, organizationId: string): Promise<OrganizationMember[]> {
+  const res = await fetch(`/api/organizations/${organizationId}/members`);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error ?? "Impossible de charger les membres.");
+  return (data.members as { userId: string; role: OrganizationRole; name: string; createdAt: string }[]).map((m) => ({
+    ...m,
     email: "",
-    createdAt: row.created_at,
   }));
 }
 
