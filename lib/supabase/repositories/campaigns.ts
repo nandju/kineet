@@ -6,11 +6,13 @@ const STATUS_TO_DB: Record<CampaignStatus, string> = {
   sending: "sending",
   sent: "completed",
   failed: "failed",
+  scheduled: "scheduled",
 };
 
 const STATUS_FROM_DB: Record<string, CampaignStatus> = {
   draft: "draft",
   queued: "draft",
+  scheduled: "scheduled",
   sending: "sending",
   paused: "sending",
   completed: "sent",
@@ -18,7 +20,7 @@ const STATUS_FROM_DB: Record<string, CampaignStatus> = {
 };
 
 const SELECT_COLUMNS =
-  "id, nom, canal, statut, message, sujet, nombre_destinataires, envoyes, echoues, date_creation";
+  "id, nom, canal, statut, message, sujet, nombre_destinataires, envoyes, echoues, date_creation, scheduled_at";
 
 interface CampaignRow {
   id: string;
@@ -31,6 +33,7 @@ interface CampaignRow {
   envoyes: number;
   echoues: number;
   date_creation: string;
+  scheduled_at: string | null;
 }
 
 function fromRow(row: CampaignRow): Campaign {
@@ -45,6 +48,7 @@ function fromRow(row: CampaignRow): Campaign {
     subject: row.sujet ?? undefined,
     message: row.message,
     createdAt: row.date_creation,
+    scheduledAt: row.scheduled_at ?? undefined,
   };
 }
 
@@ -88,7 +92,8 @@ export async function insertCampaign(
       en_attente: pending,
       progression,
       date_creation: campaign.createdAt,
-      date_envoi: campaign.status !== "draft" ? campaign.createdAt : null,
+      date_envoi: campaign.status !== "draft" && campaign.status !== "scheduled" ? campaign.createdAt : null,
+      scheduled_at: campaign.scheduledAt ?? null,
     })
     .select(SELECT_COLUMNS)
     .single();

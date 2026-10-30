@@ -115,6 +115,8 @@ export function NewCampaignPanel() {
   const [messageErrors, setMessageErrors] = useState<Record<string, string>>({});
 
   const [sendProgress, setSendProgress] = useState({ sent: 0, pending: 0, failed: 0, total: 0, percent: 0, eta: 0 });
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [scheduling, setScheduling] = useState(false);
 
   useEffect(() => {
     if (!organizationId) return;
@@ -415,6 +417,52 @@ export function NewCampaignPanel() {
     setView("done");
   }, [validRecipients, channel, subject, message, addCampaign]);
 
+  const scheduleCampaign = useCallback(async () => {
+    if (!scheduledAt) {
+      notify.error("Date requise", "Choisissez une date et une heure d'envoi.");
+      return;
+    }
+    const scheduledDate = new Date(scheduledAt);
+    if (scheduledDate.getTime() <= Date.now()) {
+      notify.error("Date invalide", "La date planifiée doit être dans le futur.");
+      return;
+    }
+
+    setScheduling(true);
+    const total = validRecipients.length;
+
+    const saved = await addCampaign({
+      id: generateId("cmp"),
+      name: `Campagne ${CHANNEL_LABELS[channel!]} — ${new Date().toLocaleDateString("fr-FR")}`,
+      channel: channel!,
+      status: "scheduled",
+      recipients: total,
+      delivered: 0,
+      failed: 0,
+      subject: channel === "email" ? subject : undefined,
+      message,
+      createdAt: new Date().toISOString(),
+      scheduledAt: scheduledDate.toISOString(),
+    });
+
+    await insertRecipients(
+      supabase,
+      saved.id,
+      validRecipients.map((r) => ({
+        nom: r.lastName,
+        prenom: r.firstName,
+        contact: r.contact,
+        statut: "waiting",
+      })),
+    ).catch(() => {
+      notify.error("Erreur", "Le détail des destinataires n'a pas pu être enregistré.");
+    });
+
+    setScheduling(false);
+    notify.success("Campagne planifiée", `Envoi programmé pour le ${scheduledDate.toLocaleString("fr-FR")}.`);
+    setView("done");
+  }, [scheduledAt, validRecipients, channel, subject, message, addCampaign, supabase]);
+
   useEffect(() => {
     if (channel) {
       setRecipients((prev) =>
@@ -484,13 +532,37 @@ export function NewCampaignPanel() {
             </div>
           ))}
         </div>
-        <div className="flex gap-4">
+        {(channel === "email" || channel === "sms") && (
+          <div className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-md">
+            <div className="space-y-2 flex-1">
+              <Label>Planifier pour plus tard (optionnel)</Label>
+              <Input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="h-11 bg-input"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-4">
           <Button variant="outline" className="rounded-full" onClick={() => { setView("form"); setStep(0); }}>
             <Pencil className="w-4 h-4 mr-2" /> Modifier
           </Button>
           <Button className="rounded-full bg-foreground text-background" onClick={startSending}>
-            <Send className="w-4 h-4 mr-2" /> Envoyer
+            <Send className="w-4 h-4 mr-2" /> Envoyer maintenant
           </Button>
+          {(channel === "email" || channel === "sms") && (
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={scheduleCampaign}
+              disabled={!scheduledAt || scheduling}
+            >
+              {scheduling ? "Planification..." : "Planifier"}
+            </Button>
+          )}
         </div>
       </div>
     );

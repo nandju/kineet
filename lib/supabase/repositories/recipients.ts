@@ -51,3 +51,27 @@ export async function listRecipients(supabase: SupabaseClient, campaignId: strin
   if (error) throw error;
   return data ?? [];
 }
+
+export async function listWaitingRecipients(supabase: SupabaseClient, campaignId: string): Promise<RecipientRow[]> {
+  const { data, error } = await supabase
+    .from("recipients")
+    .select("id, nom, prenom, contact, statut, erreur, heure_envoi")
+    .eq("campaign_id", campaignId)
+    .eq("statut", "waiting");
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function updateRecipientStatus(
+  supabase: SupabaseClient,
+  recipientId: string,
+  statut: "sent" | "failed",
+  erreur?: string | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from("recipients")
+    .update({ statut, erreur: erreur ?? null, heure_envoi: new Date().toISOString() })
+    .eq("id", recipientId);
+  if (error) throw error;
+}

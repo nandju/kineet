@@ -45,6 +45,7 @@ const STATUS_LABELS: Record<CampaignStatus, string> = {
   sending: "En cours",
   failed: "Échouée",
   draft: "Brouillon",
+  scheduled: "Planifiée",
 };
 
 const RECIPIENT_STATUS_LABELS: Record<RecipientStatus, string> = {
@@ -155,6 +156,7 @@ export function HistoryPanel() {
             <SelectItem value="sending">En cours</SelectItem>
             <SelectItem value="failed">Échouée</SelectItem>
             <SelectItem value="draft">Brouillon</SelectItem>
+            <SelectItem value="scheduled">Planifiée</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -85,8 +86,12 @@ export default async function AdminOrganizationDetailPage({ params }: { params: 
               </thead>
               <tbody>
                 {org.recentCampaigns.map((c) => (
-                  <tr key={c.id} className="border-b border-border last:border-0">
-                    <td className="p-3">{c.nom}</td>
+                  <tr key={c.id} className="border-b border-border last:border-0 hover:bg-secondary/50">
+                    <td className="p-3">
+                      <Link href={`/admin/organizations/${org.id}/campaigns/${c.id}`} className="font-medium hover:underline">
+                        {c.nom}
+                      </Link>
+                    </td>
                     <td className="p-3 capitalize">{c.canal}</td>
                     <td className="p-3 capitalize">{c.statut}</td>
                     <td className="p-3 font-mono text-xs text-muted-foreground">

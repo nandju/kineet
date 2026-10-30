@@ -16,9 +16,12 @@ function slugify(name: string): string {
 /**
  * Super-admin-only: creates an organization without making the super-admin a
  * member of it (platform admins belong to no organization), then generates
- * an "owner" invite for the person designated as that organization's admin —
+ * an "admin" invite for the person designated as that organization's admin —
  * same mechanism as a regular team invite, just issued by the super-admin
- * instead of an existing member.
+ * instead of an existing member. Not "owner": organization_invites.role only
+ * allows 'admin'/'member' (owner is assigned exclusively via organization
+ * creation, see 0004_organizations.sql) — 'admin' already gives full
+ * member-management rights, which is what matters here.
  */
 export async function POST(request: Request) {
   const role = await getPlatformAdminRole();

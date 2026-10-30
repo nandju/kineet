@@ -97,6 +97,63 @@ export async function adminGetOrganization(admin: SupabaseClient, organizationId
   };
 }
 
+export interface AdminCampaignDetail {
+  id: string;
+  nom: string;
+  canal: string;
+  statut: string;
+  message: string;
+  sujet: string | null;
+  dateCreation: string;
+  organizationId: string;
+  organizationName: string;
+  recipients: { id: string; nom: string; prenom: string; contact: string; statut: string; erreur: string | null }[];
+}
+
+/** Full campaign content + target recipients — super-admin only (role "admin"), not "comptabilite". */
+export async function adminGetCampaignDetail(
+  admin: SupabaseClient,
+  organizationId: string,
+  campaignId: string,
+): Promise<AdminCampaignDetail | null> {
+  const [{ data: campaign, error: campaignError }, { data: org }, { data: recipients }] = await Promise.all([
+    admin
+      .from("campaigns")
+      .select("id, nom, canal, statut, message, sujet, date_creation")
+      .eq("id", campaignId)
+      .eq("organization_id", organizationId)
+      .maybeSingle(),
+    admin.from("organizations").select("name").eq("id", organizationId).maybeSingle(),
+    admin
+      .from("recipients")
+      .select("id, nom, prenom, contact, statut, erreur")
+      .eq("campaign_id", campaignId)
+      .order("nom", { ascending: true }),
+  ]);
+  if (campaignError) throw campaignError;
+  if (!campaign) return null;
+
+  return {
+    id: campaign.id,
+    nom: campaign.nom,
+    canal: campaign.canal,
+    statut: campaign.statut,
+    message: campaign.message,
+    sujet: campaign.sujet,
+    dateCreation: campaign.date_creation,
+    organizationId,
+    organizationName: org?.name ?? "",
+    recipients: (recipients ?? []).map((r: any) => ({
+      id: r.id,
+      nom: r.nom,
+      prenom: r.prenom,
+      contact: r.contact,
+      statut: r.statut,
+      erreur: r.erreur,
+    })),
+  };
+}
+
 export async function adminDeleteOrganization(admin: SupabaseClient, organizationId: string): Promise<void> {
   const { error } = await admin.from("organizations").delete().eq("id", organizationId);
   if (error) throw error;

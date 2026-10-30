@@ -1,6 +1,6 @@
 export type Channel = "whatsapp" | "email" | "sms";
 
-export type CampaignStatus = "sent" | "sending" | "failed" | "draft";
+export type CampaignStatus = "sent" | "sending" | "failed" | "draft" | "scheduled";
 
 export interface Recipient {
   id: string;
@@ -21,6 +21,7 @@ export interface Campaign {
   subject?: string;
   message: string;
   createdAt: string; // ISO date
+  scheduledAt?: string; // ISO date, only set when status is "scheduled"
 }
 
 export interface Profile {
