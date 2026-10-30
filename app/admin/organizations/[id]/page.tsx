@@ -2,10 +2,13 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPlatformAdminRole } from "@/lib/auth/admin-guard";
 import { adminGetOrganization } from "@/lib/supabase/repositories/admin";
 import { DeleteOrgButton } from "@/components/admin/delete-org-button";
 
 export default async function AdminOrganizationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  if ((await getPlatformAdminRole()) !== "admin") notFound();
+
   const { id } = await params;
   const admin = createAdminClient();
   const org = await adminGetOrganization(admin, id);

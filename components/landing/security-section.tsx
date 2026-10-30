@@ -96,10 +96,10 @@ export function SecuritySection() {
               {securityFeatures.map((feature, index) => (
                 <div
                   key={feature.title}
-                  className="absolute w-48 h-48 rounded-full bg-[#2E6BFF]/10 flex items-center justify-center transition-opacity duration-500"
+                  className="absolute w-48 h-48 rounded-full bg-[#7C35E2]/10 flex items-center justify-center transition-opacity duration-500"
                   style={{ opacity: activeFeature === index ? 1 : 0 }}
                 >
-                  <feature.icon className="w-20 h-20 text-[#2E6BFF]" strokeWidth={1.5} />
+                  <feature.icon className="w-20 h-20 text-[#7C35E2]" strokeWidth={1.5} />
                 </div>
               ))}
             </div>
@@ -135,7 +135,7 @@ export function SecuritySection() {
                 key={feature.title}
                 className={`p-6 rounded-2xl border bg-card transition-all duration-500 cursor-default ${
                   activeFeature === index
-                    ? "border-[#2E6BFF]/40 shadow-md shadow-[#2E6BFF]/5"
+                    ? "border-[#7C35E2]/40 shadow-md shadow-[#7C35E2]/5"
                     : "border-border"
                 } ${isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}
                 style={{ transitionDelay: `${index * 80}ms` }}

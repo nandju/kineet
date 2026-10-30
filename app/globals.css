@@ -38,17 +38,18 @@
   --sidebar-border: oklch(0.90 0.008 265);
   --sidebar-ring: oklch(0.55 0.18 265);
 
-  /* Chapnet brand */
-  --brand-blue: #2E6BFF;
-  --brand-violet: #8B5CF6;
-  --brand-orange: #FF7A45;
-  --brand-gradient: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-violet) 55%, var(--brand-orange) 100%);
+  /* Chapnet brand (LOGO chapnet BRAND.pdf) */
+  --brand-purple: #7C35E2;
+  --brand-purple-dark: #532396;
+  --brand-blue: #344AE3;
+  --brand-blue-dark: #233296;
+  --brand-gradient: linear-gradient(135deg, var(--brand-purple) 0%, var(--brand-blue) 100%);
 }
 
 @theme inline {
   --font-sans: var(--font-instrument), 'Instrument Sans', system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), 'JetBrains Mono', monospace;
-  --font-display: var(--font-manrope), 'Manrope', system-ui, sans-serif;
+  --font-display: var(--font-poppins), 'Poppins', system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -191,10 +192,9 @@
   .word-gradient {
     background: linear-gradient(
       45deg,
-      #2E6BFF 0%,
-      #8B5CF6 35%,
-      #C2599B 60%,
-      #FF7A45 100%
+      #7C35E2 0%,
+      #532396 50%,
+      #344AE3 100%
     );
     background-size: 300% 300%;
     background-clip: text;

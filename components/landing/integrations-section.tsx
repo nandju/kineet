@@ -187,7 +187,7 @@ export function IntegrationsSection() {
 
               {/* Logo */}
               <div className={`w-10 h-10 mb-6 flex items-center justify-center transition-colors ${
-                hoveredIndex === index ? "text-[#2E6BFF]" : "text-foreground/60"
+                hoveredIndex === index ? "text-[#7C35E2]" : "text-foreground/60"
               }`}>
                 {logos[integration.name]}
               </div>

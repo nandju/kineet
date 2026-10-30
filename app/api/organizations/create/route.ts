@@ -60,6 +60,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     success: true,
-    organization: { id: org.id, name: org.name, slug: org.slug, role: "owner", createdAt: org.created_at },
+    organization: { id: org.id, name: org.name, slug: org.slug, role: "owner", createdAt: org.created_at, paidUntil: null },
   });
 }

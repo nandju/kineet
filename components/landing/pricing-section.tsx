@@ -108,7 +108,7 @@ export function PricingSection() {
                 key={plan.name}
                 className={`relative bg-card rounded-2xl border transition-all duration-700 ${
                   plan.highlight
-                    ? "border-[#2E6BFF]/40 lg:-mx-2 lg:z-10 lg:scale-105 shadow-xl shadow-[#2E6BFF]/10"
+                    ? "border-[#7C35E2]/40 lg:-mx-2 lg:z-10 lg:scale-105 shadow-xl shadow-[#7C35E2]/10"
                     : "border-border lg:first:-mr-2 lg:last:-ml-2"
                 } ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}
                 style={{ transitionDelay: `${index * 100}ms` }}
@@ -156,7 +156,7 @@ export function PricingSection() {
                   <ul className="space-y-3 mb-10">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3">
-                        <Check className="w-4 h-4 text-[#2E6BFF] mt-0.5 shrink-0" />
+                        <Check className="w-4 h-4 text-[#7C35E2] mt-0.5 shrink-0" />
                         <span className="text-sm text-muted-foreground">{feature}</span>
                       </li>
                     ))}
@@ -186,15 +186,15 @@ export function PricingSection() {
         }`}>
           <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-[#2E6BFF]" />
+              <Check className="w-4 h-4 text-[#7C35E2]" />
               Contacts chiffrés
             </span>
             <span className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-[#2E6BFF]" />
+              <Check className="w-4 h-4 text-[#7C35E2]" />
               Historique complet
             </span>
             <span className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-[#2E6BFF]" />
+              <Check className="w-4 h-4 text-[#7C35E2]" />
               Envoi multi-canal
             </span>
           </div>

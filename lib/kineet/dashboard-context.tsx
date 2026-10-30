@@ -55,6 +55,7 @@ interface DashboardContextValue {
   organizationName: string;
   organizationRole: Organization["role"] | null;
   organizations: Organization[];
+  billingBlocked: boolean;
   switchOrganization: (slug: string) => void;
   createOrganization: (name: string) => Promise<void>;
   // SaaS architecture managers
@@ -104,6 +105,12 @@ export function DashboardProvider({ children, orgSlug }: { children: ReactNode; 
         if (!org) {
           notify.error("Organisation introuvable", "Vous n'êtes pas membre de cette organisation.");
           router.replace("/dashboard");
+          return;
+        }
+
+        if (org.paidUntil && new Date(org.paidUntil) < new Date()) {
+          setOrganization(org);
+          setOrganizations(myOrgs);
           return;
         }
 
@@ -240,6 +247,7 @@ export function DashboardProvider({ children, orgSlug }: { children: ReactNode; 
       organizationName: organization?.name ?? "",
       organizationRole: organization?.role ?? null,
       organizations,
+      billingBlocked: !!organization?.paidUntil && new Date(organization.paidUntil) < new Date(),
       switchOrganization,
       createOrganization,
       // Expose SaaS architecture for advanced usage

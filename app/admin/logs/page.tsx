@@ -1,9 +1,13 @@
+import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPlatformAdminRole } from "@/lib/auth/admin-guard";
 import { adminListRecentActivity } from "@/lib/supabase/repositories/admin";
 
 export default async function AdminLogsPage() {
+  if ((await getPlatformAdminRole()) !== "admin") notFound();
+
   const admin = createAdminClient();
   const entries = await adminListRecentActivity(admin);
 

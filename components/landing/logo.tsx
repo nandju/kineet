@@ -1,44 +1,48 @@
 "use client";
 
-import { useId } from "react";
-
+/**
+ * Traced from the brand book's reference renders (LOGO chapnet BRAND.pdf) —
+ * nested open "C" circuit brackets: the outer bracket ends in two rounded
+ * pill terminals, the inner bracket branches to two hollow ring nodes, plus
+ * two small floating "comma" accents. currentColor so it works both as the
+ * white mark on a brand-gradient background and as a colored mark on light UI.
+ */
 export function ChapnetMark({ className = "w-8 h-8" }: { className?: string }) {
-  const id = `chapnet-mark-${useId()}`;
-
   return (
-    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <defs>
-        <linearGradient id={id} x1="6" y1="8" x2="42" y2="40" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#2E6BFF" />
-          <stop offset="55%" stopColor="#8B5CF6" />
-          <stop offset="100%" stopColor="#FF7A45" />
-        </linearGradient>
-      </defs>
+    <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
       <path
-        d="M34 12.5C31.2 9.9 27.5 8.3 23.5 8.3 15.2 8.3 8.5 15 8.5 23.3s6.7 15 15 15c4.3 0 8.2-1.8 10.9-4.7"
-        stroke={`url(#${id})`}
-        strokeWidth="4.4"
+        d="M84 8
+           C 68 -2, 46 -4, 28 6
+           C 6 18, -2 42, 8 64
+           C 18 86, 42 98, 64 94
+           C 74 92, 80 98, 86 104"
+        stroke="currentColor"
+        strokeWidth="11"
         strokeLinecap="round"
-        fill="none"
       />
       <path
-        d="M28.5 17C26.9 15.5 24.8 14.6 22.5 14.6c-4.9 0-8.9 4-8.9 8.9s4 8.9 8.9 8.9c2.4 0 4.6-.9 6.2-2.5"
-        stroke={`url(#${id})`}
-        strokeWidth="4.4"
+        d="M68 28
+           C 56 20, 42 20, 33 28
+           C 22 38, 22 58, 33 68
+           C 42 76, 56 76, 66 70"
+        stroke="currentColor"
+        strokeWidth="9.5"
         strokeLinecap="round"
-        fill="none"
       />
-      <circle cx="34.5" cy="11.5" r="3" fill="#2E6BFF" />
-      <circle cx="34.5" cy="35" r="3" fill="#FF7A45" />
+      <path d="M68 28 L92 20" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
+      <circle cx="98" cy="17" r="8" stroke="currentColor" strokeWidth="5" />
+      <path d="M66 70 L92 88" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
+      <circle cx="98" cy="92" r="8" stroke="currentColor" strokeWidth="5" />
+      <path d="M48 42 C 41 42, 39 49, 46 51" stroke="currentColor" strokeWidth="9" strokeLinecap="round" />
+      <path d="M46 68 C 53 70, 58 65, 53 58" stroke="currentColor" strokeWidth="9" strokeLinecap="round" />
     </svg>
   );
 }
 
 export function ChapnetWordmark({ className = "text-2xl" }: { className?: string }) {
   return (
-    <span className={`font-display font-extrabold tracking-tight ${className}`}>
-      <span className="text-foreground">CHAP</span>
-      <span className="brand-gradient-text">NET</span>
+    <span className={`font-display font-extrabold tracking-tight brand-gradient-text ${className}`}>
+      Chapnet
     </span>
   );
 }
@@ -50,7 +54,9 @@ export function ChapnetLogo({ markClassName = "w-8 h-8", wordmarkClassName = "te
 }) {
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
-      <ChapnetMark className={markClassName} />
+      <span className="text-[color:var(--brand-purple)]">
+        <ChapnetMark className={markClassName} />
+      </span>
       <ChapnetWordmark className={wordmarkClassName} />
     </span>
   );

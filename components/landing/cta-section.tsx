@@ -94,8 +94,8 @@ export function CtaSection() {
                   backgroundImage: "radial-gradient(white 1px, transparent 1px)",
                   backgroundSize: "22px 22px",
                 }} />
-                <div className="relative z-10 w-28 h-28 rounded-3xl brand-gradient flex items-center justify-center shadow-xl">
-                  <ChapnetMark className="w-16 h-16 [&_circle]:fill-white [&_path]:stroke-white" />
+                <div className="relative z-10 w-28 h-28 rounded-3xl brand-gradient flex items-center justify-center shadow-xl text-white">
+                  <ChapnetMark className="w-16 h-16" />
                 </div>
               </div>
             </div>

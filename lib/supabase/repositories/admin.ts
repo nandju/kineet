@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createPaymentLink, getPaymentLinkTransactions, cancelPaymentLink } from "@/lib/saspay/client";
 
 export interface AdminOrganizationSummary {
   id: string;
@@ -127,4 +128,195 @@ export async function adminListRecentActivity(admin: SupabaseClient, limit = 50)
     organizationName: c.organizations?.name ?? "—",
     createdAt: c.date_creation,
   }));
+}
+
+export interface AdminOrganizationBilling {
+  id: string;
+  name: string;
+  slug: string;
+  paidUntil: string | null;
+}
+
+/** For the Facturation section, accessible to both "admin" and "comptabilite" platform roles. */
+export async function adminListOrganizationsBilling(admin: SupabaseClient, search?: string): Promise<AdminOrganizationBilling[]> {
+  let query = admin
+    .from("organizations")
+    .select("id, name, slug, paid_until")
+    .order("name", { ascending: true });
+
+  if (search?.trim()) {
+    query = query.ilike("name", `%${search.trim()}%`);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    paidUntil: row.paid_until,
+  }));
+}
+
+export interface AdminPaymentLink {
+  id: string;
+  name: string;
+  amount: string;
+  currency: string;
+  description: string | null;
+  slug: string | null;
+  status: "pending" | "paid" | "expired" | "cancelled";
+  extendsDays: number;
+  createdAt: string;
+  paidAt: string | null;
+}
+
+export async function adminGetOrganizationBilling(
+  admin: SupabaseClient,
+  organizationId: string,
+): Promise<AdminOrganizationBilling | null> {
+  const { data, error } = await admin
+    .from("organizations")
+    .select("id, name, slug, paid_until")
+    .eq("id", organizationId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return { id: data.id, name: data.name, slug: data.slug, paidUntil: data.paid_until };
+}
+
+export async function adminListPaymentLinks(admin: SupabaseClient, organizationId: string): Promise<AdminPaymentLink[]> {
+  const { data, error } = await admin
+    .from("organization_payment_links")
+    .select("id, name, amount, currency, description, slug, status, extends_days, created_at, paid_at")
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    name: row.name,
+    amount: row.amount,
+    currency: row.currency,
+    description: row.description,
+    slug: row.slug,
+    status: row.status,
+    extendsDays: row.extends_days,
+    createdAt: row.created_at,
+    paidAt: row.paid_at,
+  }));
+}
+
+export async function adminCreatePaymentLink(
+  admin: SupabaseClient,
+  organizationId: string,
+  input: { name: string; amount: string; currency: string; description?: string; extendsDays: number },
+  createdBy: string,
+): Promise<AdminPaymentLink> {
+  const link = await createPaymentLink({
+    name: input.name,
+    amount: input.amount,
+    currency: input.currency,
+    description: input.description,
+  });
+
+  const { data, error } = await admin
+    .from("organization_payment_links")
+    .insert({
+      organization_id: organizationId,
+      saspay_link_id: link.id,
+      slug: link.slug,
+      name: input.name,
+      amount: input.amount,
+      currency: input.currency,
+      description: input.description ?? null,
+      extends_days: input.extendsDays,
+      created_by: createdBy,
+    })
+    .select("id, name, amount, currency, description, slug, status, extends_days, created_at, paid_at")
+    .single();
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    name: data.name,
+    amount: data.amount,
+    currency: data.currency,
+    description: data.description,
+    slug: data.slug,
+    status: data.status,
+    extendsDays: data.extends_days,
+    createdAt: data.created_at,
+    paidAt: data.paid_at,
+  };
+}
+
+/**
+ * The only reliable way to know a given link got paid: no documented field
+ * ties a webhook or transaction back to its payment_link id, so this polls
+ * the link's own transaction list instead of trusting webhook payloads.
+ */
+export async function adminRefreshPaymentLink(admin: SupabaseClient, linkId: string): Promise<AdminPaymentLink> {
+  const { data: row, error } = await admin
+    .from("organization_payment_links")
+    .select("id, organization_id, saspay_link_id, name, amount, currency, description, slug, status, extends_days, created_at, paid_at")
+    .eq("id", linkId)
+    .single();
+  if (error) throw error;
+
+  if (row.status === "pending") {
+    const { results } = await getPaymentLinkTransactions(row.saspay_link_id);
+    const success = results.find((t) => t.status === "SUCCESS");
+
+    if (success) {
+      const paidAt = new Date().toISOString();
+      const { data: org } = await admin.from("organizations").select("paid_until").eq("id", row.organization_id).maybeSingle();
+      const base = org?.paid_until && new Date(org.paid_until) > new Date() ? new Date(org.paid_until) : new Date();
+      const newPaidUntil = new Date(base.getTime() + row.extends_days * 24 * 60 * 60 * 1000).toISOString();
+
+      await Promise.all([
+        admin.from("organization_payment_links").update({ status: "paid", paid_at: paidAt }).eq("id", linkId),
+        admin.from("organizations").update({ paid_until: newPaidUntil }).eq("id", row.organization_id),
+      ]);
+
+      return {
+        id: row.id,
+        name: row.name,
+        amount: row.amount,
+        currency: row.currency,
+        description: row.description,
+        slug: row.slug,
+        status: "paid",
+        extendsDays: row.extends_days,
+        createdAt: row.created_at,
+        paidAt,
+      };
+    }
+  }
+
+  return {
+    id: row.id,
+    name: row.name,
+    amount: row.amount,
+    currency: row.currency,
+    description: row.description,
+    slug: row.slug,
+    status: row.status,
+    extendsDays: row.extends_days,
+    createdAt: row.created_at,
+    paidAt: row.paid_at,
+  };
+}
+
+export async function adminCancelPaymentLink(admin: SupabaseClient, linkId: string): Promise<void> {
+  const { data: row, error } = await admin
+    .from("organization_payment_links")
+    .select("saspay_link_id")
+    .eq("id", linkId)
+    .single();
+  if (error) throw error;
+
+  await cancelPaymentLink(row.saspay_link_id);
+  await admin.from("organization_payment_links").update({ status: "cancelled" }).eq("id", linkId);
 }

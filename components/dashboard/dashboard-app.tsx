@@ -79,9 +79,30 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+function BillingBlockedScreen() {
+  const { logout } = useDashboard();
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="max-w-md text-center space-y-4">
+        <h1 className="font-display font-bold text-2xl tracking-tight">Facturation requise</h1>
+        <p className="text-muted-foreground">
+          L'accès de votre organisation a expiré. Contactez-nous pour régulariser votre abonnement.
+        </p>
+        <Button variant="outline" className="rounded-full" onClick={logout}>
+          Déconnexion
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function DashboardContent() {
-  const { section } = useDashboard();
+  const { section, billingBlocked } = useDashboard();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  if (billingBlocked) {
+    return <BillingBlockedScreen />;
+  }
 
   const panels: Record<DashboardSection, React.ReactNode> = {
     home: <HomePanel />,

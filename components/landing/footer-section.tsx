@@ -102,7 +102,7 @@ export function FooterSection() {
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#2E6BFF]" />
+              <span className="w-2 h-2 rounded-full bg-[#7C35E2]" />
               Tous les canaux opérationnels
             </span>
           </div>

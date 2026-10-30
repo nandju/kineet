@@ -53,7 +53,7 @@ export function HowItWorksSection() {
       ref={sectionRef}
       className="relative py-24 lg:py-32 bg-muted overflow-hidden"
     >
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-[#8B5CF6]/10 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-[#7C35E2]/10 blur-[100px] pointer-events-none" />
 
       <div className="relative z-10 max-w-[1400px] mx-auto px-6 lg:px-12">
         {/* Header */}
@@ -83,7 +83,7 @@ export function HowItWorksSection() {
               onClick={() => setActiveStep(index)}
               className={`relative text-left p-8 lg:p-12 rounded-2xl border bg-card transition-all duration-500 overflow-hidden ${
                 activeStep === index
-                  ? "border-[#2E6BFF]/50 shadow-lg shadow-[#2E6BFF]/5"
+                  ? "border-[#7C35E2]/50 shadow-lg shadow-[#7C35E2]/5"
                   : "border-border hover:border-foreground/20"
               }`}
             >

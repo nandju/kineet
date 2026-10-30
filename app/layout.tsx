@@ -1,6 +1,6 @@
 import React from "react"
 import type { Metadata } from 'next'
-import { Instrument_Sans, Manrope, JetBrains_Mono } from 'next/font/google'
+import { Instrument_Sans, Poppins, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
@@ -10,9 +10,10 @@ const instrumentSans = Instrument_Sans({
   variable: '--font-instrument'
 });
 
-const manrope = Manrope({
+const poppins = Poppins({
   subsets: ["latin"],
-  variable: '--font-manrope'
+  weight: ["500", "600", "700", "800"],
+  variable: '--font-poppins'
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -36,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className={`${instrumentSans.variable} ${manrope.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className={`${instrumentSans.variable} ${poppins.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         {children}
         <Toaster position="top-right" richColors closeButton theme="light" />
         <Analytics />

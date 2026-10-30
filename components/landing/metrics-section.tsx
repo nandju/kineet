@@ -247,8 +247,8 @@ export function MetricsSection() {
         <div className="grid lg:grid-cols-12 gap-8 mb-20 lg:mb-32">
           <div className="lg:col-span-8 lg:col-start-1">
             <div className="flex items-center gap-4 mb-6">
-              <span className="flex items-center gap-2 px-3 py-1 bg-[#2E6BFF]/10 text-[#2E6BFF] text-xs font-mono">
-                <span className="w-2 h-2 rounded-full bg-[#2E6BFF] animate-pulse" />
+              <span className="flex items-center gap-2 px-3 py-1 bg-[#7C35E2]/10 text-[#7C35E2] text-xs font-mono">
+                <span className="w-2 h-2 rounded-full bg-[#7C35E2] animate-pulse" />
                 LIVE
               </span>
               <span className="text-sm font-mono text-muted-foreground">

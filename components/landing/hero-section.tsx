@@ -64,8 +64,8 @@ function BlurWord({ word, trigger }: { word: string; trigger: number }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trigger]);
 
-  // gradient colours cycling across letter positions — brand blue → violet → orange
-  const gradientColors = ["#2E6BFF", "#8B5CF6", "#C2599B", "#FF7A45", "#2E6BFF"];
+  // gradient colours cycling across letter positions — brand purple → blue
+  const gradientColors = ["#7C35E2", "#532396", "#344AE3", "#532396", "#7C35E2"];
 
   return (
     <>
@@ -125,8 +125,8 @@ export function HeroSection() {
   return (
     <section className="relative min-h-screen flex flex-col justify-center overflow-hidden bg-background pt-32 pb-16 lg:pt-40">
       {/* Soft brand-colored glows */}
-      <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-[#2E6BFF]/10 blur-[120px] pointer-events-none" />
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[#FF7A45]/10 blur-[120px] pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-[#7C35E2]/10 blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[#344AE3]/10 blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-12">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
@@ -218,18 +218,18 @@ export function HeroSection() {
                 backgroundSize: "28px 28px",
               }} />
 
-              <div className="relative z-10 flex flex-col items-center text-center gap-8">
+              <div className="relative z-10 flex flex-col items-center text-center gap-8 text-white">
                 <ChapnetMark className="w-16 h-16" />
                 <div>
-                  <span className="block font-display font-extrabold text-3xl tracking-tight text-white">CHAPNET</span>
+                  <span className="block font-display font-extrabold text-3xl tracking-tight text-white">Chapnet</span>
                   <span className="block mt-2 text-sm text-white/50 tracking-[0.2em] uppercase">Envoyez. Touchez. Rassurez.</span>
                 </div>
 
                 {/* Phone mockup */}
                 <div className="relative mt-4 w-40 h-80 rounded-[2rem] border-4 border-white/15 bg-white/5 backdrop-blur-sm flex items-center justify-center">
                   <div className="absolute top-3 w-12 h-1.5 rounded-full bg-white/20" />
-                  <div className="w-16 h-16 rounded-2xl brand-gradient flex items-center justify-center">
-                    <ChapnetMark className="w-8 h-8 [&_circle]:fill-white [&_path]:stroke-white" />
+                  <div className="w-16 h-16 rounded-2xl brand-gradient flex items-center justify-center text-white">
+                    <ChapnetMark className="w-8 h-8" />
                   </div>
                   <div className="absolute bottom-6 left-6 right-6 flex flex-col gap-2">
                     <div className="h-2 rounded-full bg-white/15 w-full" />

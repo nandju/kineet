@@ -8,6 +8,7 @@ export interface Organization {
   slug: string;
   role: OrganizationRole;
   createdAt: string;
+  paidUntil: string | null;
 }
 
 export interface OrganizationMember {
@@ -42,7 +43,7 @@ function slugify(name: string): string {
 export async function listMyOrganizations(supabase: SupabaseClient, userId: string): Promise<Organization[]> {
   const { data, error } = await supabase
     .from("organization_members")
-    .select("role, organizations(id, name, slug, created_at)")
+    .select("role, organizations(id, name, slug, created_at, paid_until)")
     .eq("user_id", userId);
 
   if (error) throw error;
@@ -54,6 +55,7 @@ export async function listMyOrganizations(supabase: SupabaseClient, userId: stri
       slug: row.organizations?.slug,
       role: row.role as OrganizationRole,
       createdAt: row.organizations?.created_at,
+      paidUntil: row.organizations?.paid_until ?? null,
     }))
     .filter((org) => org.id)
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
@@ -78,7 +80,7 @@ export async function isOrganizationMember(
 export async function getOrganizationBySlug(supabase: SupabaseClient, slug: string): Promise<Organization | null> {
   const { data, error } = await supabase
     .from("organizations")
-    .select("id, name, slug, created_at, organization_members(role, user_id)")
+    .select("id, name, slug, created_at, paid_until, organization_members(role, user_id)")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -97,6 +99,7 @@ export async function getOrganizationBySlug(supabase: SupabaseClient, slug: stri
     slug: data.slug,
     role: membership.role as OrganizationRole,
     createdAt: data.created_at,
+    paidUntil: (data as any).paid_until ?? null,
   };
 }
 

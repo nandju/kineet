@@ -1,24 +1,32 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Users } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPlatformAdminRole } from "@/lib/auth/admin-guard";
 import { adminListOrganizations } from "@/lib/supabase/repositories/admin";
+import { CreateOrgDialog } from "@/components/admin/create-org-dialog";
 
 export default async function AdminOrganizationsPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  if ((await getPlatformAdminRole()) !== "admin") notFound();
+
   const { q } = await searchParams;
   const admin = createAdminClient();
   const organizations = await adminListOrganizations(admin, q);
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-3xl tracking-tight mb-2">Organisations</h1>
-        <p className="text-muted-foreground">{organizations.length} organisation(s) sur la plateforme.</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display text-3xl tracking-tight mb-2">Organisations</h1>
+          <p className="text-muted-foreground">{organizations.length} organisation(s) sur la plateforme.</p>
+        </div>
+        <CreateOrgDialog />
       </div>
 
       <form className="max-w-sm">

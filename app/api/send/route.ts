@@ -30,6 +30,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Organisation invalide." }, { status: 403 });
   }
 
+  const { data: org } = await supabase.from("organizations").select("paid_until").eq("id", organizationId).maybeSingle();
+  if (org?.paid_until && new Date(org.paid_until) < new Date()) {
+    return NextResponse.json({ success: false, error: "Facturation requise pour cette organisation." }, { status: 402 });
+  }
+
   if (channel === "email") {
     const config = await getProviderConfig(supabase, organizationId, "email");
     if (!config) {
