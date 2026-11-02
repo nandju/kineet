@@ -31,8 +31,8 @@ export async function POST(request: Request) {
   }
 
   const { data: org } = await supabase.from("organizations").select("paid_until").eq("id", organizationId).maybeSingle();
-  if (org?.paid_until && new Date(org.paid_until) < new Date()) {
-    return NextResponse.json({ success: false, error: "Facturation requise pour cette organisation." }, { status: 402 });
+  if (!org?.paid_until || new Date(org.paid_until) < new Date()) {
+    return NextResponse.json({ success: false, error: "Aucun abonnement actif pour cette organisation." }, { status: 402 });
   }
 
   if (channel === "email") {

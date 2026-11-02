@@ -56,6 +56,7 @@ interface DashboardContextValue {
   organizationRole: Organization["role"] | null;
   organizations: Organization[];
   billingBlocked: boolean;
+  hasActiveSubscription: boolean;
   switchOrganization: (slug: string) => void;
   createOrganization: (name: string) => Promise<void>;
   // SaaS architecture managers
@@ -248,6 +249,7 @@ export function DashboardProvider({ children, orgSlug }: { children: ReactNode; 
       organizationRole: organization?.role ?? null,
       organizations,
       billingBlocked: !!organization?.paidUntil && new Date(organization.paidUntil) < new Date(),
+      hasActiveSubscription: !!organization?.paidUntil && new Date(organization.paidUntil) > new Date(),
       switchOrganization,
       createOrganization,
       // Expose SaaS architecture for advanced usage

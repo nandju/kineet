@@ -2,25 +2,17 @@ import "server-only";
 
 const SASPAY_BASE_URL = "https://api.saspay.me/api/v1";
 
-export interface SasPayPaymentLink {
+export interface SasPayCheckoutSession {
   id: string;
   slug: string;
-  name: string;
-  amount: string | null;
+  checkout_url: string;
+  amount: string;
   currency: string;
   description: string | null;
-  is_active: boolean;
+  status: "PENDING" | "PAID" | "EXPIRED" | "CANCELLED";
+  customer_email: string;
+  customer_name: string;
   expires_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface SasPayTransaction {
-  id: string;
-  reference: string;
-  status: "PENDING" | "SUCCESS" | "FAILED" | "CANCELLED";
-  requested_amount: string;
-  currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -64,41 +56,44 @@ async function saspayFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return body.data;
 }
 
-/** POST /payment-links/ — pas de header Idempotency-Key, la doc dit explicitement qu'il n'est pas supporté ici. */
-export async function createPaymentLink(input: {
-  name: string;
+/**
+ * POST /checkout-sessions/ — utilisé à la place de /payment-links/ : seul
+ * endpoint SasPay dont la réponse documente une vraie URL publique hébergée
+ * (checkout_url, pay.saspay.me/checkout/{slug}). Les liens de paiement ne
+ * renvoient aucun champ d'URL documenté, donc inutilisables tels quels pour
+ * donner un lien partageable au client.
+ */
+export async function createCheckoutSession(input: {
   amount: string;
   currency: string;
   description?: string;
-}): Promise<SasPayPaymentLink> {
-  return saspayFetch<SasPayPaymentLink>("/payment-links/", {
+  customerName: string;
+  customerEmail: string;
+}): Promise<SasPayCheckoutSession> {
+  return saspayFetch<SasPayCheckoutSession>("/checkout-sessions/", {
     method: "POST",
     body: JSON.stringify({
-      name: input.name,
-      amount_type: "FIXED",
       amount: input.amount,
       currency: input.currency,
       description: input.description,
-      show_confirmation_page: true,
+      customer_name: input.customerName,
+      customer_email: input.customerEmail,
     }),
   });
 }
 
-/** GET /payment-links/{id}/transactions/ — seule source fiable pour savoir si un lien donné a été payé (aucun champ documenté ne relie un webhook à son lien d'origine). */
-export async function getPaymentLinkTransactions(
-  linkId: string,
-  page = 1,
-): Promise<{ count: number; results: SasPayTransaction[] }> {
-  return saspayFetch(`/payment-links/${linkId}/transactions/?page=${page}`);
+/** GET /checkout-sessions/{id}/ — son statut (status) fait foi directement, pas besoin de chercher une transaction associée. */
+export async function getCheckoutSession(sessionId: string): Promise<SasPayCheckoutSession> {
+  return saspayFetch<SasPayCheckoutSession>(`/checkout-sessions/${sessionId}/`);
 }
 
-/** DELETE /payment-links/{id}/ — désactive le lien ; les transactions déjà créées via ce lien ne sont pas affectées. Réponse 204 sans corps, donc pas de parsing JSON ici. */
-export async function cancelPaymentLink(linkId: string): Promise<void> {
-  const res = await fetch(`${SASPAY_BASE_URL}/payment-links/${linkId}/`, {
-    method: "DELETE",
+/** POST /checkout-sessions/{id}/cancel/ */
+export async function cancelCheckoutSession(sessionId: string): Promise<void> {
+  const res = await fetch(`${SASPAY_BASE_URL}/checkout-sessions/${sessionId}/cancel/`, {
+    method: "POST",
     headers: { Authorization: `Bearer ${getSecretKey()}` },
   });
-  if (res.status !== 204 && res.status !== 404) {
-    throw new Error(`SasPay (${res.status}): annulation du lien impossible.`);
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`SasPay (${res.status}): annulation de la session impossible.`);
   }
 }

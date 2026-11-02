@@ -7,12 +7,11 @@ const MAX_CLOCK_SKEW_SECONDS = 300;
 /**
  * Verifies and logs SasPay webhook deliveries (X-Webhook-Signature = hex
  * HMAC-SHA256 of "{timestamp}.{raw_body}", X-Webhook-Timestamp = unix
- * seconds). This route does NOT drive the paid_until extension itself — no
- * documented field ties a transaction.success payload back to the
- * payment_link id that produced it, so that state change happens via an
- * explicit GET /payment-links/{id}/transactions/ poll instead (see
- * adminRefreshPaymentLink). This route exists for the required signature
- * verification and for audit history.
+ * seconds). This route does NOT drive the paid_until extension itself —
+ * that happens via an explicit GET /checkout-sessions/{id}/ status check
+ * instead (see adminRefreshPaymentLink), which is directly authoritative.
+ * This route exists for the required signature verification and for audit
+ * history.
  */
 export async function POST(request: Request) {
   const signature = request.headers.get("x-webhook-signature");

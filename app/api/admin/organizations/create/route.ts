@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getPlatformAdminRole } from "@/lib/auth/admin-guard";
+import { getPlatformAdminActor } from "@/lib/auth/admin-guard";
+import { logAdminAction } from "@/lib/supabase/repositories/admin";
 
 function slugify(name: string): string {
   const base = name
@@ -24,8 +25,8 @@ function slugify(name: string): string {
  * member-management rights, which is what matters here.
  */
 export async function POST(request: Request) {
-  const role = await getPlatformAdminRole();
-  if (role !== "admin") {
+  const actor = await getPlatformAdminActor();
+  if (actor?.role !== "admin") {
     return NextResponse.json({ success: false, error: "Accès refusé." }, { status: 404 });
   }
 
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
 
   const { data: invite, error: inviteError } = await admin
     .from("organization_invites")
-    .insert({ organization_id: org.id, email: adminEmail.trim(), role: "owner" })
+    .insert({ organization_id: org.id, email: adminEmail.trim(), role: "admin" })
     .select("token")
     .single();
 
@@ -61,6 +62,13 @@ export async function POST(request: Request) {
     await admin.from("organizations").delete().eq("id", org.id);
     return NextResponse.json({ success: false, error: inviteError.message }, { status: 500 });
   }
+
+  await logAdminAction(admin, {
+    actor,
+    action: "organization.created",
+    organizationId: org.id,
+    metadata: { name: org.name, adminEmail: adminEmail.trim() },
+  });
 
   return NextResponse.json({ success: true, organization: org, inviteToken: invite.token });
 }

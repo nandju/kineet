@@ -47,8 +47,8 @@ export async function GET(request: Request) {
       .eq("id", campaign.organization_id)
       .maybeSingle();
 
-    if (org?.paid_until && new Date(org.paid_until) < new Date()) {
-      results.push({ campaignId: campaign.id, sent: 0, failed: 0, skipped: "facturation en retard" });
+    if (!org?.paid_until || new Date(org.paid_until) < new Date()) {
+      results.push({ campaignId: campaign.id, sent: 0, failed: 0, skipped: "aucun abonnement actif" });
       continue;
     }
 

@@ -25,9 +25,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     currency?: string;
     description?: string;
     extendsDays?: number;
+    customerName?: string;
+    customerEmail?: string;
   };
 
-  if (!body.name || !body.amount || !body.currency || !body.extendsDays) {
+  if (!body.name || !body.amount || !body.currency || !body.extendsDays || !body.customerName || !body.customerEmail) {
     return NextResponse.json({ success: false, error: "Champs manquants." }, { status: 400 });
   }
 
@@ -48,8 +50,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         currency: body.currency,
         description: body.description,
         extendsDays: body.extendsDays,
+        customerName: body.customerName,
+        customerEmail: body.customerEmail,
       },
-      user.id,
+      { id: user.id, email: user.email ?? null },
     );
     return NextResponse.json({ success: true, link });
   } catch (err) {

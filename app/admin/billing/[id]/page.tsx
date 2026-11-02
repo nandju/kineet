@@ -6,6 +6,8 @@ import { getPlatformAdminRole } from "@/lib/auth/admin-guard";
 import { adminGetOrganizationBilling, adminListPaymentLinks } from "@/lib/supabase/repositories/admin";
 import { PaymentLinkForm } from "@/components/admin/payment-link-form";
 import { PaymentLinkRow } from "@/components/admin/payment-link-row";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default async function AdminBillingOrgPage({ params }: { params: Promise<{ id: string }> }) {
   const role = await getPlatformAdminRole();
@@ -21,7 +23,7 @@ export default async function AdminBillingOrgPage({ params }: { params: Promise<
   const isActive = org.paidUntil && new Date(org.paidUntil) > new Date();
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <div>
         <h1 className="font-display text-3xl tracking-tight mb-2">{org.name}</h1>
         <p className="text-muted-foreground font-mono text-sm">{org.slug}</p>
@@ -37,41 +39,46 @@ export default async function AdminBillingOrgPage({ params }: { params: Promise<
         </p>
       </div>
 
-      <section className="space-y-4">
-        <h2 className="font-display text-xl">Générer un lien de paiement</h2>
-        <p className="text-sm text-muted-foreground max-w-xl">
-          Le lien est créé auprès de SasPay. Son slug est affiché ci-dessous ; SasPay ne documente pas encore de
-          champ d'URL publique pour les liens de paiement — vérifiez l'URL exacte à partager dans le tableau de bord SasPay.
-        </p>
-        <PaymentLinkForm organizationId={id} />
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>Générer un lien de paiement</CardTitle>
+          <CardDescription>
+            Génère une session de paiement SasPay et son lien hébergé (pay.saspay.me), prêt à copier et partager.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PaymentLinkForm organizationId={id} />
+        </CardContent>
+      </Card>
 
-      <section className="space-y-3">
-        <h2 className="font-display text-xl">Historique ({links.length})</h2>
-        {links.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucun lien généré pour cette organisation.</p>
-        ) : (
-          <div className="border border-border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="p-3 font-medium">Facture</th>
-                  <th className="p-3 font-medium">Montant</th>
-                  <th className="p-3 font-medium">Statut</th>
-                  <th className="p-3 font-medium">Slug SasPay</th>
-                  <th className="p-3 font-medium">Créé le</th>
-                  <th className="p-3 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
+      <Card>
+        <CardHeader>
+          <CardTitle>Historique ({links.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="px-0">
+          {links.length === 0 ? (
+            <p className="text-sm text-muted-foreground px-6">Aucun lien généré pour cette organisation.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Facture</TableHead>
+                  <TableHead>Montant</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Lien</TableHead>
+                  <TableHead>Créé le</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {links.map((link) => (
                   <PaymentLinkRow key={link.id} link={link} />
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

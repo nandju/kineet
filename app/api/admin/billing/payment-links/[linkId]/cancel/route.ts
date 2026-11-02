@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getPlatformAdminRole } from "@/lib/auth/admin-guard";
+import { getPlatformAdminActor } from "@/lib/auth/admin-guard";
 import { adminCancelPaymentLink } from "@/lib/supabase/repositories/admin";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ linkId: string }> }) {
-  const role = await getPlatformAdminRole();
-  if (!role) return NextResponse.json({ success: false, error: "Accès refusé." }, { status: 404 });
+  const actor = await getPlatformAdminActor();
+  if (!actor) return NextResponse.json({ success: false, error: "Accès refusé." }, { status: 404 });
 
   const { linkId } = await params;
   try {
     const admin = createAdminClient();
-    await adminCancelPaymentLink(admin, linkId);
+    await adminCancelPaymentLink(admin, linkId, actor);
     return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json(

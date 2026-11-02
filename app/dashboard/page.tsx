@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { listMyOrganizations } from "@/lib/supabase/repositories/organizations";
+import { getPlatformAdminRole } from "@/lib/auth/admin-guard";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -10,6 +11,13 @@ export default async function DashboardPage() {
 
   if (!user) {
     redirect("/login");
+  }
+
+  // Platform admins (super-admin / comptabilité) belong to no organization —
+  // sending them here would otherwise dead-end on "create an organization".
+  const platformRole = await getPlatformAdminRole();
+  if (platformRole) {
+    redirect(platformRole === "admin" ? "/admin" : "/admin/billing");
   }
 
   const organizations = await listMyOrganizations(supabase, user.id);

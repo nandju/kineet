@@ -4,8 +4,9 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { RefreshCw, X } from "lucide-react";
+import { RefreshCw, X, Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TableRow, TableCell } from "@/components/ui/table";
 import { notify } from "@/lib/kineet/notify";
 import type { AdminPaymentLink } from "@/lib/supabase/repositories/admin";
 
@@ -50,20 +51,38 @@ export function PaymentLinkRow({ link }: { link: AdminPaymentLink }) {
   };
 
   return (
-    <tr className="border-b border-border last:border-0">
-      <td className="p-3">
+    <TableRow>
+      <TableCell className="whitespace-normal">
         {link.name}
         {link.description && <span className="block text-xs text-muted-foreground">{link.description}</span>}
-      </td>
-      <td className="p-3">{link.amount} {link.currency}</td>
-      <td className="p-3 capitalize">{STATUS_LABEL[link.status]}</td>
-      <td className="p-3 font-mono text-xs text-muted-foreground">
-        {link.slug ?? "—"}
-      </td>
-      <td className="p-3 font-mono text-xs text-muted-foreground">
+      </TableCell>
+      <TableCell>{link.amount} {link.currency}</TableCell>
+      <TableCell className="capitalize">{STATUS_LABEL[link.status]}</TableCell>
+      <TableCell className="font-mono text-xs">
+        {link.url ? (
+          <div className="flex items-center gap-1.5">
+            <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1 truncate max-w-48">
+              {link.url} <ExternalLink className="w-3 h-3 shrink-0" />
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(link.url!);
+                notify.success("Copié", "Le lien est dans le presse-papiers.");
+              }}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+            >
+              <Copy className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        )}
+      </TableCell>
+      <TableCell className="font-mono text-xs text-muted-foreground">
         {format(new Date(link.createdAt), "d MMM yyyy", { locale: fr })}
-      </td>
-      <td className="p-3">
+      </TableCell>
+      <TableCell>
         {link.status === "pending" && (
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={refresh} disabled={pending} className="rounded-full">
@@ -74,7 +93,7 @@ export function PaymentLinkRow({ link }: { link: AdminPaymentLink }) {
             </Button>
           </div>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

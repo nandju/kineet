@@ -11,6 +11,7 @@ import {
   Menu,
   Users,
   UserCog,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -96,8 +97,17 @@ function BillingBlockedScreen() {
   );
 }
 
+function SubscriptionBanner() {
+  return (
+    <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 bg-destructive text-destructive-foreground text-sm font-medium">
+      <AlertTriangle className="w-4 h-4 shrink-0" />
+      <span>Aucun abonnement actif pour cette organisation — l'envoi de messages sera bloqué. Contactez-nous pour régulariser votre abonnement.</span>
+    </div>
+  );
+}
+
 function DashboardContent() {
-  const { section, billingBlocked } = useDashboard();
+  const { section, billingBlocked, hasActiveSubscription } = useDashboard();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   if (billingBlocked) {
@@ -115,26 +125,29 @@ function DashboardContent() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden lg:flex w-64 flex-col border-r border-sidebar-border bg-sidebar shrink-0">
-        <SidebarNav />
-      </aside>
+    <div className="flex flex-col min-h-screen bg-background">
+      {!hasActiveSubscription && <SubscriptionBanner />}
+      <div className="flex flex-1 min-h-0">
+        <aside className="hidden lg:flex w-64 flex-col border-r border-sidebar-border bg-sidebar shrink-0">
+          <SidebarNav />
+        </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="lg:hidden flex items-center justify-between p-4 border-b border-border">
-          <a href="/"><ChapnetLogo markClassName="w-6 h-6" wordmarkClassName="text-lg" /></a>
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon"><Menu className="w-5 h-5" /></Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-64 bg-sidebar">
-              <SidebarNav onNavigate={() => setMobileOpen(false)} />
-            </SheetContent>
-          </Sheet>
-        </header>
-        <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
-          {panels[section]}
-        </main>
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="lg:hidden flex items-center justify-between p-4 border-b border-border">
+            <a href="/"><ChapnetLogo markClassName="w-6 h-6" wordmarkClassName="text-lg" /></a>
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon"><Menu className="w-5 h-5" /></Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-64 bg-sidebar">
+                <SidebarNav onNavigate={() => setMobileOpen(false)} />
+              </SheetContent>
+            </Sheet>
+          </header>
+          <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
+            {panels[section]}
+          </main>
+        </div>
       </div>
     </div>
   );

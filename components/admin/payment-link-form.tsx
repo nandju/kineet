@@ -14,12 +14,14 @@ export function PaymentLinkForm({ organizationId }: { organizationId: string }) 
   const [currency, setCurrency] = useState("XOF");
   const [description, setDescription] = useState("");
   const [extendsDays, setExtendsDays] = useState("30");
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [pending, startTransition] = useTransition();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !amount.trim()) {
-      notify.error("Champs manquants", "Nom et montant sont requis.");
+    if (!name.trim() || !amount.trim() || !customerName.trim() || !customerEmail.trim()) {
+      notify.error("Champs manquants", "Nom, montant, et nom/e-mail du client sont requis.");
       return;
     }
 
@@ -33,6 +35,8 @@ export function PaymentLinkForm({ organizationId }: { organizationId: string }) 
           currency,
           description: description.trim() || undefined,
           extendsDays: Number(extendsDays),
+          customerName: customerName.trim(),
+          customerEmail: customerEmail.trim(),
         }),
       });
       const data = await res.json();
@@ -44,6 +48,8 @@ export function PaymentLinkForm({ organizationId }: { organizationId: string }) 
       setName("");
       setAmount("");
       setDescription("");
+      setCustomerName("");
+      setCustomerEmail("");
       router.refresh();
     });
   };
@@ -65,6 +71,14 @@ export function PaymentLinkForm({ organizationId }: { organizationId: string }) 
       <div className="space-y-2 col-span-2">
         <Label>Description (optionnel)</Label>
         <Input value={description} onChange={(e) => setDescription(e.target.value)} />
+      </div>
+      <div className="space-y-2">
+        <Label>Nom du client</Label>
+        <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Requis par SasPay" />
+      </div>
+      <div className="space-y-2">
+        <Label>E-mail du client</Label>
+        <Input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="Requis par SasPay" />
       </div>
       <div className="space-y-2">
         <Label>Jours d'accès accordés au paiement</Label>
